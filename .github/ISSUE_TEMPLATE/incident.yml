@@ -1,0 +1,23 @@
+name: Incident
+description: Capture a production incident or trust issue.
+title: "[incident] "
+labels: ["bug", "sev1"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source link
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Customer or business impact
+    validations:
+      required: true
+  - type: textarea
+    id: containment
+    attributes:
+      label: Current workaround or containment
+    validations:
+      required: true

@@ -1,0 +1,23 @@
+name: Gap
+description: Capture a missing capability or broken handoff in the current product.
+title: "[gap] "
+labels: ["gap"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source link
+    validations:
+      required: true
+  - type: textarea
+    id: missing
+    attributes:
+      label: What is missing
+    validations:
+      required: true
+  - type: textarea
+    id: risk
+    attributes:
+      label: Why it matters
+    validations:
+      required: true

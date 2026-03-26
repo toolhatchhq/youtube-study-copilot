@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>YouTube Study Copilot - Privacy</title>
+    <link rel="stylesheet" href="page.css">
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Privacy</p>
+          <h1>Data Use Summary</h1>
+          <p>This extension is designed to work locally first. It accesses only the information needed to turn a captioned YouTube video into study materials.</p>
+        </div>
+      </section>
+
+      <section class="panel-grid">
+        <article class="card plain-card">
+          <h2>What The Extension Reads</h2>
+          <ul class="list">
+            <li>The current YouTube watch page URL, title, author, description, and available caption tracks.</li>
+            <li>Caption text for the video only after the user clicks Load Transcript.</li>
+            <li>Saved study packs stored in Chrome on the local device.</li>
+          </ul>
+        </article>
+        <article class="card plain-card">
+          <h2>What The Extension Stores</h2>
+          <ul class="list">
+            <li>Generated summaries, flashcards, quizzes, and short transcript excerpts in <code>chrome.storage.local</code>.</li>
+            <li>Onboarding state, an anonymous telemetry ID, and local Pro-license state for the current browser profile.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel-grid">
+        <article class="card plain-card">
+          <h2>When Data Leaves The Extension</h2>
+          <ul class="list">
+            <li>If Chrome's built-in Prompt API is available, study-pack generation can use that on-device capability.</li>
+            <li>If a user activates or refreshes a Pro license, the extension contacts Lemon Squeezy's license API with the provided email and license key.</li>
+            <li>If analytics or error monitoring are enabled for a release, the extension can send anonymous usage events to PostHog and error details to Sentry.</li>
+          </ul>
+        </article>
+        <article class="card plain-card">
+          <h2>What It Does Not Do</h2>
+          <ul class="list">
+            <li>No ad tracking or browsing-history collection is included.</li>
+            <li>No microphone, webcam, or non-YouTube page access is requested.</li>
+          </ul>
+        </article>
+      </section>
+
+      <p class="footer-note">Before publishing to the Chrome Web Store, publish the final policy from <code>store/PRIVACY_POLICY.md</code> through GitHub Pages and place that URL in <code>config.js</code>.</p>
+    </main>
+  </body>
+</html>

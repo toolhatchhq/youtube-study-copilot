@@ -1,0 +1,27 @@
+name: Extension Checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Parse manifest
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest ok')"
+      - name: Check JS modules
+        run: |
+          node --input-type=module --check < background.js
+          node --input-type=module --check < sidepanel.js
+          node --input-type=module --check < welcome.js
+          node --input-type=module --check < telemetry.js
+          node --input-type=module --check < config.js
+      - name: Build public pages
+        run: node scripts/build-pages.mjs
+      - name: Launch audit
+        run: node scripts/launch-audit.mjs

@@ -1,0 +1,23 @@
+name: Business Question
+description: Capture a question that should be answered with product, revenue, or usage data.
+title: "[business-question] "
+labels: ["business"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source link
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question to answer
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: What decision depends on this answer
+    validations:
+      required: true

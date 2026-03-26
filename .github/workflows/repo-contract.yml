@@ -1,0 +1,39 @@
+name: Repo Contract
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required files
+        run: |
+          missing=0
+          for file in \
+            README.md \
+            AGENTS.md \
+            CURRENT_PRIORITIES.md \
+            docs/spec.md \
+            docs/roadmap.md \
+            docs/decisions.md \
+            ops/runbook.md \
+            ops/release-checklist.md \
+            analytics/events.md \
+            business/kpis.md \
+            research/source-log.md \
+            research/opportunity-brief.md \
+            research/competitor-matrix.md \
+            research/policy-risk.md \
+            research/ai-stack.md \
+            research/unit-economics.md \
+            research/go-no-go.md
+          do
+            if [ ! -f "$file" ]; then
+              echo "Missing required file: $file"
+              missing=1
+            fi
+          done
+          exit $missing

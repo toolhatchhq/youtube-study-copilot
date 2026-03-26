@@ -1,0 +1,63 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Repo Contract Check",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "-e",
+        "const fs=require('fs');const required=['README.md','AGENTS.md','CURRENT_PRIORITIES.md','docs/spec.md','docs/roadmap.md','docs/decisions.md','ops/runbook.md','ops/release-checklist.md','analytics/events.md','business/kpis.md','research/source-log.md','research/opportunity-brief.md','research/competitor-matrix.md','research/policy-risk.md','research/ai-stack.md','research/unit-economics.md','research/go-no-go.md'];const missing=required.filter((file)=>!fs.existsSync(file));if(missing.length){console.error('Missing files:\\n'+missing.join('\\n'));process.exit(1)}console.log('Repo contract OK')"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Research Gate Check",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "scripts/research-gate-audit.mjs"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Manifest Parse",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "-e",
+        "JSON.parse(require('fs').readFileSync('manifest.json','utf8'));console.log('manifest ok')"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Check JS Modules",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "Get-Content background.js -Raw | node --input-type=module --check; Get-Content sidepanel.js -Raw | node --input-type=module --check; Get-Content welcome.js -Raw | node --input-type=module --check; Get-Content telemetry.js -Raw | node --input-type=module --check; Get-Content config.js -Raw | node --input-type=module --check; Get-Content scripts/research-gate-audit.mjs -Raw | node --input-type=module --check"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Pages",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "scripts/build-pages.mjs"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Launch Audit",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "scripts/launch-audit.mjs"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+name: Bug
+description: Report a defect with a clear source and reproduction path.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source link
+      description: Link the user report, Sentry event, PostHog insight, business question, or roadmap item.
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options: ["sev1", "sev2", "sev3"]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction or trigger
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+    validations:
+      required: true

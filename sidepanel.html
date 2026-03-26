@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>YouTube Study Copilot</title>
+    <link rel="stylesheet" href="sidepanel.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Revenue-Ready MVP</p>
+          <h1>YouTube Study Copilot</h1>
+          <p class="subtitle">Turn a lesson, tutorial, or podcast into notes, flashcards, quizzes, and exportable study packs.</p>
+        </div>
+        <div class="hero-actions">
+          <span id="plan-badge" class="pill accent">Free</span>
+          <button id="open-welcome-button" type="button" class="ghost small">Guide</button>
+        </div>
+      </header>
+
+      <section id="onboarding-card" class="card onboarding hidden">
+        <div class="row space-between">
+          <strong>Start Here</strong>
+          <button id="dismiss-onboarding-button" type="button" class="ghost small">Hide</button>
+        </div>
+        <ol id="onboarding-list" class="checklist"></ol>
+        <div class="button-group">
+          <button id="open-youtube-button" type="button">Open YouTube</button>
+          <button id="open-privacy-button" type="button" class="ghost">Privacy</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="row space-between">
+          <strong>Current video</strong>
+          <button id="refresh-button" type="button" class="ghost small">Refresh</button>
+        </div>
+        <p id="status" class="status">Open a YouTube video page to begin.</p>
+        <div id="video-meta" class="video-meta hidden">
+          <h2 id="video-title"></h2>
+          <p id="video-author" class="muted"></p>
+          <p id="caption-status" class="muted"></p>
+        </div>
+        <div class="button-group">
+          <button id="load-transcript-button" type="button">Load Transcript</button>
+          <button id="build-pack-button" type="button" class="secondary" disabled>Build Study Pack</button>
+          <button id="save-pack-button" type="button" class="ghost" disabled>Save Pack</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="row space-between">
+          <strong>Transcript preview</strong>
+          <span id="transcript-length" class="pill">0 chars</span>
+        </div>
+        <pre id="transcript-preview" class="preview">No transcript loaded yet.</pre>
+      </section>
+
+      <section class="card">
+        <div class="row space-between">
+          <strong>Study Pack</strong>
+          <span id="pack-source-badge" class="pill">No pack</span>
+        </div>
+        <p id="pack-empty" class="muted">Generate or load a pack to see your study materials here.</p>
+      </section>
+
+      <section class="card">
+        <strong>Summary</strong>
+        <ul id="summary-list" class="list">
+          <li>No study pack generated yet.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <strong>Flashcards</strong>
+        <div id="flashcards-list" class="cards">
+          <article class="flashcard">
+            <h3>Front</h3>
+            <p>Generate a pack to see flashcards here.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="card">
+        <strong>Quiz</strong>
+        <div id="quiz-list" class="cards">
+          <article class="flashcard">
+            <h3>Question</h3>
+            <p>Generate a pack to see quiz questions here.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="row space-between">
+          <strong>Export</strong>
+          <span id="export-plan-pill" class="pill">Markdown</span>
+        </div>
+        <p id="export-status" class="muted">Markdown export is free. CSV, JSON, and transcript export unlock with Pro.</p>
+        <div class="button-group">
+          <button id="export-markdown-button" type="button" class="ghost" disabled>Markdown</button>
+          <button id="export-csv-button" type="button" class="ghost" disabled>Flashcards CSV</button>
+          <button id="export-json-button" type="button" class="ghost" disabled>JSON Backup</button>
+          <button id="export-transcript-button" type="button" class="ghost" disabled>Transcript TXT</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="row space-between">
+          <strong>Billing</strong>
+          <span id="billing-badge" class="pill accent">Free plan</span>
+        </div>
+        <p id="billing-copy" class="muted">Save your latest packs locally and export Markdown for free. Upgrade for CSV, JSON, transcript export, and a deeper archive.</p>
+        <div class="pricing-grid">
+          <article class="plan-card">
+            <div class="row space-between">
+              <h2>Free</h2>
+              <span id="free-plan-price" class="price-tag">$0</span>
+            </div>
+            <ul id="free-plan-list" class="feature-list"></ul>
+          </article>
+          <article class="plan-card pro">
+            <div class="row space-between">
+              <h2>Pro</h2>
+              <span id="pro-plan-price" class="price-tag">$19 lifetime</span>
+            </div>
+            <ul id="pro-plan-list" class="feature-list"></ul>
+          </article>
+        </div>
+        <div class="button-group">
+          <button id="checkout-button" type="button">Unlock Pro</button>
+          <button id="toggle-license-form-button" type="button" class="ghost">Activate License</button>
+          <button id="refresh-license-button" type="button" class="ghost hidden">Refresh Access</button>
+          <button id="manage-billing-button" type="button" class="ghost hidden">Billing Portal</button>
+        </div>
+        <form id="license-form" class="license-form hidden">
+          <label class="field">
+            <span>Checkout email</span>
+            <input id="license-email" type="email" autocomplete="email" placeholder="you@example.com">
+          </label>
+          <label class="field">
+            <span>License key</span>
+            <textarea id="license-key" rows="2" placeholder="Paste the Lemon Squeezy license key from your receipt"></textarea>
+          </label>
+          <div class="button-group">
+            <button id="activate-license-button" type="submit" class="secondary">Activate Pro</button>
+            <button id="clear-license-button" type="button" class="ghost">Deactivate Device</button>
+          </div>
+          <p id="license-status" class="muted status-note">License activation talks to Lemon Squeezy only when you choose Pro.</p>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="row space-between">
+          <strong>Saved packs</strong>
+          <span id="saved-count" class="pill">0</span>
+        </div>
+        <div id="saved-packs" class="saved-list">
+          <p class="muted">Nothing saved yet.</p>
+        </div>
+      </section>
+
+      <section class="card footer-card">
+        <div class="link-row">
+          <button id="open-support-button" type="button" class="ghost small">Support</button>
+          <button id="open-setup-button" type="button" class="ghost small">Setup</button>
+        </div>
+        <p class="muted tiny">Study packs stay local in Chrome. Billing permission is requested only when you activate or refresh a Pro license.</p>
+      </section>
+    </main>
+
+    <script src="sidepanel.js" type="module"></script>
+  </body>
+</html>

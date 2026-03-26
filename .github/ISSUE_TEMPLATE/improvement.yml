@@ -1,0 +1,21 @@
+name: Improvement
+description: Capture a meaningful improvement with a business or product reason.
+title: "[improvement] "
+labels: ["improvement"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source link
+    validations:
+      required: true
+  - type: textarea
+    id: opportunity
+    attributes:
+      label: Improvement opportunity
+    validations:
+      required: true
+  - type: textarea
+    id: metric
+    attributes:
+      label: Expected user or business impact

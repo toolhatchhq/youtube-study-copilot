@@ -1,0 +1,21 @@
+name: Customer Request
+description: Capture a customer request that may become product work.
+title: "[customer-request] "
+labels: ["improvement", "source:support"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Support conversation or user report
+    validations:
+      required: true
+  - type: textarea
+    id: request
+    attributes:
+      label: Requested outcome
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: Product response
