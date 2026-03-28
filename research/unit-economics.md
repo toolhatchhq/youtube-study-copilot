@@ -14,7 +14,7 @@
 
 ## Cost Drivers
 
-- Lemon Squeezy transaction fees
+- Polar merchant-of-record transaction fees
 - support time
 - optional future cloud inference if browser-native AI proves insufficient
 - analytics and monitoring tools once usage exceeds free tiers

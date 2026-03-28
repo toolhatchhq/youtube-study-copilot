@@ -12,6 +12,12 @@
 - Why: lowest solo-founder support burden and fastest path to self-serve monetization.
 - Tradeoff: customer activation is device-based, not account-based.
 
+## 2026-03-28
+
+- Decision: Switch billing from Lemon Squeezy to Polar hosted checkout and public license-key activation.
+- Why: the live Polar setup was approved and keeps the no-backend launch path intact with public client-safe activation, validation, and deactivation endpoints.
+- Tradeoff: the extension still depends on a managed billing provider and device-based activations rather than a full user-account backend.
+
 ## 2026-03-26
 
 - Decision: Use repo Markdown plus GitHub Issues as the operating system.

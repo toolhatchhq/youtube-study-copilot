@@ -14,13 +14,12 @@ export const APP_CONFIG = {
   privacyPolicyUrl: "https://toolhatchhq.github.io/youtube-study-copilot/privacy/",
   termsUrl: "https://toolhatchhq.github.io/youtube-study-copilot/terms/",
   billing: {
-    provider: "Lemon Squeezy",
-    licenseApiOrigin: "https://api.lemonsqueezy.com/*",
-    checkoutUrl: "https://YOUR-STORE.lemonsqueezy.com/checkout/buy/YOUR-VARIANT-SLUG",
-    billingPortalUrl: "",
-    storeId: 0,
-    productId: 0,
-    variantId: 0,
+    provider: "Polar",
+    licenseApiOrigin: "https://api.polar.sh/*",
+    checkoutUrl: "https://buy.polar.sh/polar_cl_y4n1Z3zttgqQB1n1CH1NUES0RDgomh0IgiSrs1ZUdiK",
+    billingPortalUrl: "https://polar.sh/toolhatch-hq/portal",
+    organizationId: "f39d8a9f-5e9f-47de-836b-2bfa02f8d12d",
+    benefitId: "",
     productName: "Study Copilot Pro",
     priceLabel: "$19 lifetime",
     requireEmailMatch: true
@@ -90,7 +89,7 @@ export const APP_CONFIG = {
 
 const PLACEHOLDER_MARKERS = [
   `YOUR-${"ORG"}`,
-  `YOUR-${"STORE"}`,
+  `YOUR-POLAR-${"ORG-ID"}`,
   "your" + "domain" + ".com",
   "support@" + "your" + "domain" + ".com"
 ];
@@ -101,10 +100,9 @@ export function getPlanDefinition(planId) {
 
 export function isBillingConfigured() {
   const checkoutUrl = String(APP_CONFIG.billing.checkoutUrl || "").trim();
-  const storeId = Number(APP_CONFIG.billing.storeId || 0);
-  const productId = Number(APP_CONFIG.billing.productId || 0);
+  const organizationId = String(APP_CONFIG.billing.organizationId || "").trim();
 
-  return /^https:\/\//i.test(checkoutUrl) && storeId > 0 && productId > 0;
+  return /^https:\/\//i.test(checkoutUrl) && Boolean(organizationId) && !isPlaceholderContact(organizationId);
 }
 
 export function getCurrentPlanId(billingState) {

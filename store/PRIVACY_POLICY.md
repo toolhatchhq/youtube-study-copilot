@@ -1,6 +1,6 @@
 # YouTube Study Copilot Privacy Policy
 
-Effective date: March 26, 2026
+Effective date: March 28, 2026
 
 YouTube Study Copilot is a Chrome extension that turns captioned YouTube videos into study materials such as summaries, flashcards, quizzes, and exports.
 
@@ -32,7 +32,7 @@ Study packs, onboarding preferences, local license state, and an anonymous telem
 The extension contacts third-party services only in these cases:
 
 - when Chrome's built-in AI features are available and used by the browser for local generation
-- when a user chooses to activate or refresh a Pro license, in which case the extension sends the provided email and license key to Lemon Squeezy's license API
+- when a user chooses to activate, refresh, or deactivate a Pro license, in which case the extension sends the provided email and license key to Polar's public license API
 - when product analytics are enabled for a release, in which case anonymous usage events are sent to PostHog
 - when error monitoring is enabled for a release, in which case crash and error details are sent to Sentry without transcript contents
 
@@ -45,7 +45,7 @@ The extension requests access to:
 - YouTube watch pages so it can read captions and video metadata
 - PostHog and Sentry ingestion endpoints so enabled analytics and error monitoring can send event data
 - local extension storage so it can save packs and settings
-- Lemon Squeezy's license API only when the user activates or refreshes a Pro license
+- Polar's license API only when the user activates, refreshes, or deactivates a Pro license
 
 ## Contact
 

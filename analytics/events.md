@@ -36,7 +36,7 @@ Attach when available:
 
 ### `checkout_started`
 
-- fired when the Lemon Squeezy checkout is launched
+- fired when the Polar checkout is launched
 
 ### `license_activated`
 

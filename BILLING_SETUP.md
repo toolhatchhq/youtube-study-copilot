@@ -1,20 +1,25 @@
-# Lemon Squeezy Billing Setup
+# Polar Billing Setup
 
-Effective for this extension build: March 26, 2026
+Effective for this extension build: March 28, 2026
 
-This extension is already wired for Lemon Squeezy's public license flow:
+This extension is already wired for Polar's public customer-license flow:
 
-- `POST /v1/licenses/activate`
-- `POST /v1/licenses/validate`
-- `POST /v1/licenses/deactivate`
+- `POST /v1/customer-portal/license-keys/activate`
+- `POST /v1/customer-portal/license-keys/validate`
+- `POST /v1/customer-portal/license-keys/deactivate`
 
-The only values you still need from your own Lemon Squeezy account are:
+## Current Repo Status
 
-- `checkoutUrl`
-- `storeId`
-- `productId`
-- `variantId`
-- optional `billingPortalUrl`
+- `checkoutUrl` is already set.
+- `billingPortalUrl` is already set.
+- `organizationId` is already set.
+- `benefitId` is still optional and blank by default.
+
+If you reuse this repo for a different Polar organization, update all four billing fields in `config.js`.
+
+The live checkout URL is already set in `config.js`:
+
+- `https://buy.polar.sh/polar_cl_y4n1Z3zttgqQB1n1CH1NUES0RDgomh0IgiSrs1ZUdiK`
 
 ## Best First Offer
 
@@ -22,38 +27,36 @@ Use a one-time paid product:
 
 - Product name: `Study Copilot Pro`
 - Price: `$19 lifetime`
-- Payment type: single payment
-- License keys: enabled
-- Activation limit: `1` or `2`
+- Payment type: one-time purchase
+- Benefit type: `License Keys`
+- Activation limit: `2`
 
 This matches the current extension UX and keeps support simpler than subscriptions.
 
-## Exact Steps In Lemon Squeezy
+## Exact Steps In Polar
 
-1. Create or open your Lemon Squeezy store.
-2. If needed, keep working in Test Mode first.
-3. Create a new product named `Study Copilot Pro`.
-4. Set it as a single-payment product.
-5. Set the paid variant price to `$19`.
-6. Enable license keys for the product or variant.
-7. Set the activation limit to `1` or `2`.
-8. Publish the product.
-9. Open the product's `Share` page and copy the hosted checkout URL.
-10. Copy your numeric store, product, and variant IDs from Lemon Squeezy.
-11. Paste those values into `config.js`.
-12. If you sell subscriptions later, add `https://YOUR-STORE.lemonsqueezy.com/billing` as `billingPortalUrl`.
+1. Create or open your Polar organization.
+2. Complete account review, payout setup, and identity verification.
+3. Create a product named `Study Copilot Pro`.
+4. Set it as a one-time product priced at `$19`.
+5. Create a `License Keys` benefit with prefix `SCP`.
+6. Set the activation limit to `2`.
+7. Attach that benefit to `Study Copilot Pro`.
+8. Create a checkout link for the product.
+9. Copy your Polar `organizationId`.
+10. If you want stricter entitlement matching, also copy the benefit ID and place it in `benefitId`.
+11. Paste the values into `config.js`.
 
 ## Paste These Values Into config.js
 
 ```js
 billing: {
-  provider: "Lemon Squeezy",
-  licenseApiOrigin: "https://api.lemonsqueezy.com/*",
-  checkoutUrl: "https://YOUR-STORE.lemonsqueezy.com/checkout/buy/YOUR-VARIANT-SLUG",
-  billingPortalUrl: "",
-  storeId: 12345,
-  productId: 67890,
-  variantId: 67891,
+  provider: "Polar",
+  licenseApiOrigin: "https://api.polar.sh/*",
+  checkoutUrl: "https://buy.polar.sh/polar_cl_y4n1Z3zttgqQB1n1CH1NUES0RDgomh0IgiSrs1ZUdiK",
+  billingPortalUrl: "https://polar.sh/toolhatch-hq/portal",
+  organizationId: "YOUR-POLAR-ORG-ID",
+  benefitId: "",
   productName: "Study Copilot Pro",
   priceLabel: "$19 lifetime",
   requireEmailMatch: true
@@ -62,25 +65,27 @@ billing: {
 
 ## Notes
 
-- Use the checkout URL from Lemon Squeezy's Share page. Do not copy a one-time cart URL.
+- Use the permanent Polar checkout link, not a temporary checkout session URL.
 - Keep `requireEmailMatch: true` for lower fraud and support risk.
 - Do not put a secret API key inside this Chrome extension.
-- The extension will stay in free mode until `checkoutUrl`, `storeId`, and `productId` are real.
+- The extension will stay in free mode until `checkoutUrl` and `organizationId` are real.
+- Leave `benefitId` blank unless you want the extension to reject license keys from any other benefit.
 
 ## Test Checklist
 
-1. In Test Mode, use the hosted checkout URL and complete a purchase with a test card.
-2. Confirm Lemon Squeezy emails a test receipt and license key.
+1. Open the live Polar checkout link and confirm the product and price are correct.
+2. Complete a test purchase if your Polar setup allows it.
 3. Paste the checkout email and license key into the extension.
 4. Confirm Pro unlocks.
 5. Click `Refresh Access` and confirm validation succeeds.
-6. Click `Deactivate Device` and confirm the extension returns to free mode.
+6. Click `Deactivate Device` and confirm the activation is released.
+7. If needed, confirm the customer can also remove activations from the Polar customer portal.
 
 ## Official Docs
 
-- Sharing products: https://docs.lemonsqueezy.com/help/products/sharing-products
-- License keys tutorial: https://docs.lemonsqueezy.com/guides/tutorials/license-keys
-- Generating license keys: https://docs.lemonsqueezy.com/help/licensing/generating-license-keys
-- Test mode: https://docs.lemonsqueezy.com/help/getting-started/test-mode
-- Activate your store: https://docs.lemonsqueezy.com/help/getting-started/activate-your-store
-- Customer portal: https://docs.lemonsqueezy.com/help/online-store/customer-portal
+- Supported countries: https://polar.sh/docs/merchant-of-record/supported-countries
+- Finance accounts: https://polar.sh/docs/features/finance/accounts
+- License keys: https://polar.sh/docs/features/benefits/license-keys
+- Checkout links: https://polar.sh/docs/features/checkout/links
+- Deactivate license key: https://polar.sh/docs/api-reference/customer-portal/license-keys/deactivate
+- Customer portal: https://polar.sh/docs/features/customer-portal

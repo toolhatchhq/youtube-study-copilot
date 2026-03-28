@@ -6,7 +6,7 @@ Use this sequence to turn the local MVP into a live launch candidate.
 
 1. Create a GitHub organization for the brand.
 2. Publish `founder-os` as a private repo.
-3. Publish `youtube-study-copilot` as a private repo.
+3. Publish `youtube-study-copilot` as a public repo before enabling GitHub Pages on GitHub Free.
 4. Apply labels from `founder-os/github/labels.json`.
 5. Create the `Portfolio` project with the states from `founder-os/github/project-states.json`.
 6. Enable branch protection on `main` with required checks and no required reviewer count.
@@ -22,12 +22,14 @@ Use this sequence to turn the local MVP into a live launch candidate.
    - `/terms/`
    - `/changelog/`
 
-## 3. Lemon Squeezy
+## 3. Polar
 
 1. Follow `BILLING_SETUP.md`.
-2. Paste the live `checkoutUrl`, `storeId`, `productId`, and `variantId` into `config.js`.
-3. Keep `requireEmailMatch: true`.
-4. Run one test purchase and device deactivation before release.
+2. Paste the live `organizationId` into `config.js`.
+3. If you want stricter entitlement matching, paste the Polar `benefitId` into `config.js`.
+4. Keep the hosted checkout link and billing portal URL current in `config.js`.
+5. Keep `requireEmailMatch: true`.
+6. Run one test purchase, activation, refresh, and device deactivation before release.
 
 ## 4. PostHog
 

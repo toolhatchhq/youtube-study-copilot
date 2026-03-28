@@ -316,11 +316,11 @@ function renderBilling() {
     const validated = state.billing.lastValidatedAt ? ` Last checked ${formatDate(state.billing.lastValidatedAt)}.` : "";
     setLicenseStatus(`Pro active${name}. ${state.billing.maskedLicenseKey || ""}${validated}`.trim());
   } else if (!checkoutConfigured) {
-    setLicenseStatus("Add your Lemon Squeezy checkout URL, store ID, and product ID in config.js to turn on Pro billing.");
+    setLicenseStatus("Add your Polar checkout URL and organization ID in config.js to turn on Pro billing.");
   } else if (state.billing?.lastError) {
     setLicenseStatus(state.billing.lastError);
   } else {
-    setLicenseStatus("License activation talks to Lemon Squeezy only when you choose Pro.");
+    setLicenseStatus("License requests talk to Polar only when you activate, refresh, or deactivate Pro.");
   }
 }
 
@@ -736,7 +736,7 @@ async function openCheckout() {
     queueEvent("paywall_viewed", {
       entry: "billing_setup_notice"
     });
-    setLicenseStatus("Set your Lemon Squeezy checkout URL, store ID, and product ID in config.js before shipping Pro billing.");
+    setLicenseStatus("Set your Polar checkout URL and organization ID in config.js before shipping Pro billing.");
     return;
   }
   queueEvent("paywall_viewed", {
@@ -755,7 +755,7 @@ async function refreshLicense() {
     return;
   }
   if (!await ensureBillingPermission()) {
-    setLicenseStatus("License refresh needs permission to contact api.lemonsqueezy.com.");
+    setLicenseStatus("License refresh needs permission to contact api.polar.sh.");
     return;
   }
   setLicenseStatus("Refreshing Pro access...");
@@ -772,7 +772,7 @@ async function activateLicense(event) {
     return;
   }
   if (!await ensureBillingPermission()) {
-    setLicenseStatus("License activation needs permission to contact api.lemonsqueezy.com.");
+    setLicenseStatus("License activation needs permission to contact api.polar.sh.");
     return;
   }
   setLicenseStatus("Activating Pro...");

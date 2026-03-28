@@ -19,7 +19,7 @@
 
 ## Billing References
 
-- billing provider: Lemon Squeezy
+- billing provider: Polar
 - product name: Study Copilot Pro
 - price: `$19 lifetime`
 - required config source: `config.js`

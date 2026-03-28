@@ -13,7 +13,7 @@ This repo now follows the shared Founder OS contract so it is understandable and
 - Markdown export on the free plan
 - CSV, JSON, and transcript export gates for Pro
 - first-run onboarding page opened on install
-- Lemon Squeezy license activation, refresh, and device deactivation flow
+- Polar hosted checkout plus public license activation, refresh, and deactivation flow
 - local privacy and support pages
 - GitHub Pages source files and deployment workflow for public support, privacy, terms, and changelog pages
 - shared telemetry plumbing for PostHog events and Sentry error reporting
@@ -24,9 +24,8 @@ This repo now follows the shared Founder OS contract so it is understandable and
 Edit `config.js` before publishing:
 
 - `APP_CONFIG.billing.checkoutUrl`
-- `APP_CONFIG.billing.storeId`
-- `APP_CONFIG.billing.productId`
-- `APP_CONFIG.billing.variantId` if you want to lock to a single price tier
+- `APP_CONFIG.billing.organizationId`
+- `APP_CONFIG.billing.benefitId` if you want to lock Pro to a single Polar benefit
 - `APP_CONFIG.billing.billingPortalUrl` if you have a customer portal
 - `APP_CONFIG.supportUrl` if you want a different support destination than the GitHub Pages default
 - `APP_CONFIG.supportEmail` later if you add Help Scout or direct email support

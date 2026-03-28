@@ -14,13 +14,13 @@
 
 ## Billing
 
-- Provider: Lemon Squeezy
+- Provider: Polar
 - Launch model: one-time Pro license
 - Required config values:
   - `checkoutUrl`
-  - `storeId`
-  - `productId`
-  - `variantId`
+  - `organizationId`
+  - optional `benefitId`
+  - optional `billingPortalUrl`
 - Rule: billing setup steps and refund handling must stay documented here and in `BILLING_SETUP.md`
 
 ## Sentry Setup Standard

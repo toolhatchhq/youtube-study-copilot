@@ -4,8 +4,8 @@
 
 - YouTube Study Copilot is licensed for individual use unless a separate agreement says otherwise.
 - Pro is sold as a one-time license for the features and limits described at purchase time.
-- If billing is enabled, Lemon Squeezy handles checkout, receipts, and license delivery.
-- Refund handling follows the active Lemon Squeezy store policy and any policy published on the checkout page.
+- If billing is enabled, Polar handles checkout, receipts, and license delivery.
+- Refund handling follows the active Polar policy and any policy published on the checkout page.
 
 ## Support And Account Issues
 

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "YouTube Study Copilot",
   "short_name": "Study Copilot",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Turn YouTube lessons into notes, flashcards, quizzes, and exportable study packs.",
   "minimum_chrome_version": "114",
   "homepage_url": "https://toolhatchhq.github.io/youtube-study-copilot/",
@@ -18,7 +18,7 @@
     "https://*.ingest.sentry.io/*"
   ],
   "optional_host_permissions": [
-    "https://api.lemonsqueezy.com/*"
+    "https://api.polar.sh/*"
   ],
   "background": {
     "service_worker": "background.js",

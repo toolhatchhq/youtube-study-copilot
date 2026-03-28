@@ -30,11 +30,10 @@ const requiredFiles = [
 
 const placeholderMarkers = [
   "YOUR-ORG",
-  "YOUR-STORE",
+  "YOUR-POLAR-ORG-ID",
   "yourdomain.com",
   "support@yourdomain.com",
-  "https://YOUR-ORG.github.io",
-  "https://YOUR-STORE.lemonsqueezy.com"
+  "https://YOUR-ORG.github.io"
 ];
 
 const launchConfigFiles = [

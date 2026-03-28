@@ -100,7 +100,7 @@ function bindEvents() {
       trackUiEvent("paywall_viewed", {
         entry: "welcome_setup_notice"
       }).catch(() => {});
-      elements.welcomeStatus.textContent = "Billing is not configured yet. Add your Lemon Squeezy checkout URL and IDs in config.js.";
+      elements.welcomeStatus.textContent = "Billing is not configured yet. Add your Polar checkout URL and organization ID in config.js.";
       return;
     }
     trackUiEvent("paywall_viewed", {

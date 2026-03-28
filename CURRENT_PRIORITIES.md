@@ -1,19 +1,18 @@
 # Current Priorities
 
-Updated: March 26, 2026
+Updated: March 28, 2026
 
 ## Top 3 Priorities
 
-1. Create the GitHub org and repo, then turn on GitHub Pages using the current `toolhatchhq.github.io` launch URLs.
-2. Set the live Lemon Squeezy, PostHog, Sentry, and Help Scout values that still cannot be inferred locally.
-3. Run end-to-end launch QA, including telemetry, billing, and public-doc validation, before store submission.
+1. Run the first end-to-end Polar paid-license test using the live checkout and real organization ID.
+2. Set the live PostHog, Sentry, and Help Scout values that still cannot be inferred locally.
+3. Run launch QA against the live GitHub Pages site and prepare the Chrome Web Store submission.
 
 ## Current Blockers
 
-- The GitHub org and repo URLs are wired locally to `toolhatchhq`, but nothing is published yet.
-- Lemon Squeezy real `checkoutUrl`, `storeId`, `productId`, and `variantId` are not set.
-- Public support, privacy, terms, and changelog URLs are pointed at GitHub Pages, but the Pages site is not live yet.
+- Optional `benefitId` is still blank, so the extension is not yet locked to a single Polar benefit. This is acceptable for launch unless you want stricter entitlement matching.
 - Sentry, PostHog, and Help Scout are wired structurally but not configured with live credentials.
+- Paid-license QA has not yet been run against the live Polar checkout flow.
 
 ## Release Target
 

@@ -19,10 +19,11 @@
 
 ## Billing
 
-1. Lemon Squeezy checkout URL is correct.
-2. `storeId`, `productId`, and `variantId` are correct.
-3. Test purchase and license activation succeed.
-4. Device deactivation succeeds.
+1. Polar checkout URL is correct.
+2. `organizationId` is correct.
+3. `benefitId` is correct if entitlement matching is locked to one benefit.
+4. Test purchase and license activation succeed.
+5. Device deactivation succeeds.
 
 ## Reliability
 

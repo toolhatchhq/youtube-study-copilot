@@ -50,6 +50,6 @@ The current business constraints are:
 
 - solo founder support burden must stay low
 - Chrome Web Store acquisition must remain clear and policy-safe
-- billing uses Lemon Squeezy license activation
+- billing uses Polar hosted checkout plus public license activation
 - public support, privacy, terms, and changelog pages must exist before release
 - telemetry must stay anonymous and low-maintenance when enabled

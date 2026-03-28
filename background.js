@@ -265,35 +265,56 @@ async function deleteStudyPack(packId) {
 
 function assertBillingConfigured() {
   if (!isBillingConfigured()) {
-    throw new Error("Set your Lemon Squeezy checkout URL, store ID, and product ID in config.js before enabling Pro billing.");
+    throw new Error("Set your Polar checkout URL and organization ID in config.js before enabling Pro billing.");
   }
 }
 
-function assertProductMatch(meta) {
-  const storeId = Number(APP_CONFIG.billing.storeId || 0);
-  const productId = Number(APP_CONFIG.billing.productId || 0);
-  const variantId = Number(APP_CONFIG.billing.variantId || 0);
+function getRequiredOrganizationId() {
+  const organizationId = String(APP_CONFIG.billing.organizationId || "").trim();
+  if (!organizationId || organizationId.includes("YOUR-POLAR-ORG-ID")) {
+    throw new Error("Set your Polar organization ID in config.js before enabling Pro billing.");
+  }
+  return organizationId;
+}
 
-  if (storeId > 0 && Number(meta?.store_id || 0) !== storeId) {
-    throw new Error("This license belongs to a different Lemon Squeezy store.");
+function getConfiguredBenefitId() {
+  return String(APP_CONFIG.billing.benefitId || "").trim();
+}
+
+function getPolarLicenseRecord(data) {
+  return data?.license_key || data || {};
+}
+
+function getPolarCustomerEmail(licenseRecord) {
+  return normalizeEmail(licenseRecord?.customer?.email || "");
+}
+
+function getPolarCustomerName(licenseRecord) {
+  return String(
+    licenseRecord?.customer?.name
+    || licenseRecord?.customer?.email
+    || ""
+  ).trim();
+}
+
+function assertBenefitMatch(licenseRecord) {
+  const benefitId = getConfiguredBenefitId();
+  if (!benefitId) {
+    return;
   }
 
-  if (productId > 0 && Number(meta?.product_id || 0) !== productId) {
-    throw new Error("This license belongs to a different product.");
-  }
-
-  if (variantId > 0 && Number(meta?.variant_id || 0) !== variantId) {
-    throw new Error("This license belongs to a different pricing variant.");
+  if (String(licenseRecord?.benefit_id || "").trim() !== benefitId) {
+    throw new Error("This license belongs to a different Polar benefit.");
   }
 }
 
-function assertCustomerMatch(inputEmail, meta) {
+function assertCustomerMatch(inputEmail, customerEmail) {
   if (!APP_CONFIG.billing.requireEmailMatch) {
     return;
   }
 
   const normalizedInput = normalizeEmail(inputEmail);
-  const normalizedCustomer = normalizeEmail(meta?.customer_email);
+  const normalizedCustomer = normalizeEmail(customerEmail);
 
   if (!normalizedInput) {
     throw new Error("Enter the email address used during checkout.");
@@ -304,20 +325,36 @@ function assertCustomerMatch(inputEmail, meta) {
   }
 }
 
-async function callLemonSqueezyLicenseApi(path, params) {
-  const response = await fetch(`https://api.lemonsqueezy.com/v1/licenses/${path}`, {
+function extractPolarError(json, status) {
+  if (typeof json?.detail === "string" && json.detail.trim()) {
+    return json.detail.trim();
+  }
+
+  if (Array.isArray(json?.detail) && json.detail[0]?.msg) {
+    return String(json.detail[0].msg).trim();
+  }
+
+  if (typeof json?.error === "string" && json.error.trim()) {
+    return json.error.trim();
+  }
+
+  return `Polar returned ${status}.`;
+}
+
+async function callPolarLicenseApi(path, payload) {
+  const response = await fetch(`https://api.polar.sh/v1/customer-portal/license-keys/${path}`, {
     method: "POST",
     headers: {
       Accept: "application/json",
-      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+      "Content-Type": "application/json"
     },
-    body: new URLSearchParams(params)
+    body: JSON.stringify(payload)
   });
 
   const json = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(json?.error || `Lemon Squeezy returned ${response.status}.`);
+    throw new Error(extractPolarError(json, response.status));
   }
 
   return json || {};
@@ -331,6 +368,7 @@ function buildInstanceName() {
 async function activateProLicense(payload) {
   assertBillingConfigured();
 
+  const organizationId = getRequiredOrganizationId();
   const email = normalizeEmail(payload?.email);
   const licenseKey = normalizeLicenseKey(payload?.licenseKey);
 
@@ -338,29 +376,27 @@ async function activateProLicense(payload) {
     throw new Error("Enter a license key to activate Pro.");
   }
 
-  const data = await callLemonSqueezyLicenseApi("activate", {
-    license_key: licenseKey,
-    instance_name: buildInstanceName()
+  const data = await callPolarLicenseApi("activate", {
+    key: licenseKey,
+    organization_id: organizationId,
+    label: buildInstanceName()
   });
 
-  if (!data?.activated) {
-    throw new Error(data?.error || "The license could not be activated.");
-  }
-
-  assertProductMatch(data.meta);
-  assertCustomerMatch(email, data.meta);
+  const licenseRecord = getPolarLicenseRecord(data);
+  assertBenefitMatch(licenseRecord);
+  assertCustomerMatch(email, getPolarCustomerEmail(licenseRecord));
 
   const nextState = await saveBillingState({
     provider: APP_CONFIG.billing.provider,
-    status: data.license_key?.status || "active",
+    status: String(licenseRecord?.status || "active"),
     hasAccess: true,
-    email,
+    email: email || getPolarCustomerEmail(licenseRecord),
     licenseKey,
     maskedLicenseKey: maskLicenseKey(licenseKey),
-    instanceId: data.instance?.id || "",
-    customerName: data.meta?.customer_name || "",
-    productName: data.meta?.product_name || APP_CONFIG.billing.productName,
-    variantName: data.meta?.variant_name || "",
+    instanceId: String(data?.id || data?.activation_id || ""),
+    customerName: getPolarCustomerName(licenseRecord),
+    productName: APP_CONFIG.billing.productName,
+    variantName: String(licenseRecord?.benefit_id || "").trim(),
     activatedAt: new Date().toISOString(),
     lastValidatedAt: new Date().toISOString(),
     lastError: ""
@@ -368,7 +404,7 @@ async function activateProLicense(payload) {
 
   await trackEvent("license_activated", {
     provider: APP_CONFIG.billing.provider,
-    variant_name: nextState.variantName || data.meta?.variant_name || ""
+    benefit_id: nextState.variantName
   });
 
   return nextState;
@@ -378,40 +414,45 @@ async function validateProLicense() {
   assertBillingConfigured();
 
   const current = await getBillingState();
+  const organizationId = getRequiredOrganizationId();
 
   if (!current.licenseKey) {
     throw new Error("No Pro license is stored on this device.");
   }
 
   const requestPayload = {
-    license_key: current.licenseKey
+    key: current.licenseKey,
+    organization_id: organizationId
   };
 
   if (current.instanceId) {
-    requestPayload.instance_id = current.instanceId;
+    requestPayload.activation_id = current.instanceId;
   }
 
-  const data = await callLemonSqueezyLicenseApi("validate", requestPayload);
-
-  if (!data?.valid) {
+  let data;
+  try {
+    data = await callPolarLicenseApi("validate", requestPayload);
+  } catch (error) {
     return saveBillingState({
       ...createDefaultBillingState(),
-      lastError: data?.error || "This license is no longer valid."
+      lastError: error instanceof Error ? error.message : "This license is no longer valid."
     });
   }
 
-  assertProductMatch(data.meta);
+  const licenseRecord = getPolarLicenseRecord(data);
+  assertBenefitMatch(licenseRecord);
   if (current.email) {
-    assertCustomerMatch(current.email, data.meta);
+    assertCustomerMatch(current.email, getPolarCustomerEmail(licenseRecord));
   }
 
   return saveBillingState({
     ...current,
-    status: data.license_key?.status || "active",
+    status: String(licenseRecord?.status || "active"),
     hasAccess: true,
-    customerName: data.meta?.customer_name || current.customerName,
-    productName: data.meta?.product_name || current.productName,
-    variantName: data.meta?.variant_name || current.variantName,
+    customerName: getPolarCustomerName(licenseRecord) || current.customerName,
+    productName: APP_CONFIG.billing.productName,
+    variantName: String(licenseRecord?.benefit_id || current.variantName || "").trim(),
+    instanceId: String(data?.activation?.id || current.instanceId || ""),
     lastValidatedAt: new Date().toISOString(),
     lastError: ""
   });
@@ -419,32 +460,23 @@ async function validateProLicense() {
 
 async function clearProLicense() {
   const current = await getBillingState();
-  let note = "";
-
   if (current.licenseKey && current.instanceId && isBillingConfigured()) {
-    try {
-      const data = await callLemonSqueezyLicenseApi("deactivate", {
-        license_key: current.licenseKey,
-        instance_id: current.instanceId
-      });
+    const organizationId = getRequiredOrganizationId();
+    await callPolarLicenseApi("deactivate", {
+      key: current.licenseKey,
+      organization_id: organizationId,
+      activation_id: current.instanceId
+    });
 
-      if (!data?.deactivated) {
-        throw new Error(data?.error || "The license instance could not be deactivated.");
-      }
-
-      assertProductMatch(data.meta);
-    } catch (error) {
-      note = error instanceof Error
-        ? `${error.message} Local access was still cleared on this device.`
-        : "Local access was cleared, but remote deactivation could not be confirmed.";
-    }
-  } else {
-    note = "Local access was cleared on this device.";
+    return {
+      billing: await saveBillingState(createDefaultBillingState()),
+      note: "This device was deactivated and returned to the free plan."
+    };
   }
 
   return {
     billing: await saveBillingState(createDefaultBillingState()),
-    note
+    note: "Local access was cleared on this device."
   };
 }
 

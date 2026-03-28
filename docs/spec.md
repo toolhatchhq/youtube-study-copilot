@@ -22,7 +22,7 @@ Turn a captioned YouTube watch page into a usable study pack without requiring t
 - exports Markdown on the free plan
 - gates CSV, JSON, and transcript export behind Pro
 - opens a welcome page on install and uses it as the options page
-- supports Lemon Squeezy license activation, validation, and device deactivation
+- supports Polar license activation, validation, and device deactivation
 - emits product telemetry events to PostHog when enabled in `config.js`
 - sends runtime error reports to Sentry when enabled in `config.js`
 - ships public support, privacy, terms, and changelog pages from repo-managed Markdown via GitHub Pages
@@ -36,7 +36,7 @@ Turn a captioned YouTube watch page into a usable study pack without requiring t
 - host access to `https://www.youtube.com/*`
 - host access to `https://*.i.posthog.com/*`
 - host access to `https://*.ingest.sentry.io/*`
-- optional host access to `https://api.lemonsqueezy.com/*`
+- optional host access to `https://api.polar.sh/*`
 
 ## Out Of Scope For This Release
 
