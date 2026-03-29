@@ -10,7 +10,7 @@
 
 - If a video has no captions, transcript loading and transcript export are unavailable.
 - Markdown export is part of the free plan. CSV, JSON, and transcript export require Pro.
-- If you move to a new device, deactivate the old device first or use the billing portal if it is enabled.
+- If you move to a new device, use `Deactivate Device` inside the extension first, or use the Polar customer portal if the old device is unavailable.
 
 ## What To Include In A Support Request
 

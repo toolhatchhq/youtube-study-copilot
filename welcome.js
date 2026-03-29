@@ -131,7 +131,7 @@ function bindEvents() {
   });
 
   elements.openReadmeButton.addEventListener("click", () => {
-    openUrl(chrome.runtime.getURL("support.html")).catch((error) => {
+    openUrl(APP_CONFIG.integrations?.github?.repositoryUrl || APP_CONFIG.publicSite?.changelogUrl || chrome.runtime.getURL("support.html")).catch((error) => {
       handleWelcomeError(error, "open_readme");
     });
   });
