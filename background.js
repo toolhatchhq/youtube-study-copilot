@@ -139,16 +139,19 @@ export function parsePlayerResponseFromScriptText(scriptText) {
   }
 }
 
-export function pickCaptionTrack(captionTracks) {
+export function pickCaptionTrack(captionTracks, defaultCaptionTrackIndex = -1) {
   if (!Array.isArray(captionTracks) || captionTracks.length === 0) {
     return null;
   }
 
+  const defaultTrack = Number.isInteger(defaultCaptionTrackIndex) && defaultCaptionTrackIndex >= 0
+    ? captionTracks[defaultCaptionTrackIndex]
+    : null;
   const manualEnglish = captionTracks.find((track) => track.languageCode?.startsWith("en") && !track.kind);
   const manualAny = captionTracks.find((track) => !track.kind);
   const autoEnglish = captionTracks.find((track) => track.languageCode?.startsWith("en"));
 
-  return manualEnglish || manualAny || autoEnglish || captionTracks[0];
+  return defaultTrack || manualEnglish || manualAny || autoEnglish || captionTracks[0];
 }
 
 function createDefaultSettings() {
@@ -346,6 +349,7 @@ async function getActiveVideoContext() {
           || parsePlayerResponse(window.ytplayer?.config?.args?.player_response)
           || parsePlayerResponseFromInlineScripts()
           || null;
+        const defaultCaptionTrackIndex = playerResponse?.captions?.playerCaptionsTracklistRenderer?.audioTracks?.[0]?.defaultCaptionTrackIndex ?? -1;
         const titleNode = document.querySelector("h1.ytd-watch-metadata yt-formatted-string");
         const ownerNode = document.querySelector("#owner a");
         const videoUrl = window.location.href;
@@ -359,7 +363,8 @@ async function getActiveVideoContext() {
           title: titleNode?.textContent?.trim() || playerResponse?.videoDetails?.title || document.title.replace(/\s*-\s*YouTube$/, ""),
           author: ownerNode?.textContent?.trim() || playerResponse?.videoDetails?.author || "",
           shortDescription: playerResponse?.videoDetails?.shortDescription || "",
-          captionTracks
+          captionTracks,
+          defaultCaptionTrackIndex
         };
       }
     });
@@ -371,7 +376,15 @@ async function getActiveVideoContext() {
     return null;
   }
 
-  const captionTrack = pickCaptionTrack(result.captionTracks);
+  const captionTrack = pickCaptionTrack(result.captionTracks, result.defaultCaptionTrackIndex);
+  const simplifiedCaptionTracks = Array.isArray(result.captionTracks)
+    ? result.captionTracks.map((track) => ({
+        baseUrl: track.baseUrl,
+        languageCode: track.languageCode || "",
+        name: track.name?.simpleText || track.vssId || "Captions",
+        kind: track.kind || "standard"
+      }))
+    : [];
 
   return {
     videoId: result.videoId,
@@ -379,6 +392,8 @@ async function getActiveVideoContext() {
     title: result.title,
     author: result.author,
     shortDescription: result.shortDescription,
+    defaultCaptionTrackIndex: Number(result.defaultCaptionTrackIndex ?? -1),
+    captionTracks: simplifiedCaptionTracks,
     captionTrack: captionTrack
       ? {
           baseUrl: captionTrack.baseUrl,
@@ -404,14 +419,25 @@ async function trimStoredStudyPacks(limit) {
   return next;
 }
 
-async function fetchTranscriptFromActiveTab(baseUrl) {
+async function fetchTranscriptFromActiveTab(baseUrl, fallbackBaseUrls = []) {
   const activeTab = await getActiveTab();
 
   if (!activeTab?.id || !activeTab.url || !isSupportedYouTubeWatchUrl(activeTab.url)) {
     throw new Error("Open a supported YouTube watch page before loading captions.");
   }
 
-  const candidateUrls = buildTranscriptFetchCandidates(baseUrl);
+  const uniqueBaseUrls = [];
+  const seenBaseUrls = new Set();
+  for (const candidate of [baseUrl, ...fallbackBaseUrls]) {
+    const normalized = String(candidate || "").trim();
+    if (!normalized || seenBaseUrls.has(normalized)) {
+      continue;
+    }
+    seenBaseUrls.add(normalized);
+    uniqueBaseUrls.push(normalized);
+  }
+
+  const candidateUrls = uniqueBaseUrls.flatMap((candidate) => buildTranscriptFetchCandidates(candidate));
   if (!candidateUrls.length) {
     throw new Error("No caption track URL is available for this video.");
   }
@@ -922,7 +948,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         sendResponse({ ok: true, data: await getActiveVideoContext() });
         return;
       case "FETCH_TRANSCRIPT":
-        sendResponse({ ok: true, data: await fetchTranscriptFromActiveTab(message.payload?.baseUrl) });
+        sendResponse({
+          ok: true,
+          data: await fetchTranscriptFromActiveTab(
+            message.payload?.baseUrl,
+            Array.isArray(message.payload?.fallbackBaseUrls) ? message.payload.fallbackBaseUrls : []
+          )
+        });
         return;
       case "GET_SAVED_STUDY_PACKS":
         sendResponse({ ok: true, data: await getStoredStudyPacks() });

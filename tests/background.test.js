@@ -129,6 +129,14 @@ describe("pickCaptionTrack", () => {
     assert.equal(pickCaptionTrack(tracks).baseUrl, "manual");
   });
 
+  it("prefers YouTube's default caption track when provided", () => {
+    const tracks = [
+      { languageCode: "en", baseUrl: "manual-en" },
+      { languageCode: "pl", baseUrl: "default-pl" }
+    ];
+    assert.equal(pickCaptionTrack(tracks, 1).baseUrl, "default-pl");
+  });
+
   it("prefers manual any language over auto English", () => {
     const tracks = [
       { languageCode: "en", kind: "asr", baseUrl: "auto-en" },

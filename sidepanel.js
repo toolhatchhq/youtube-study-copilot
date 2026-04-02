@@ -846,8 +846,14 @@ async function loadTranscript() {
     return;
   }
   setStatus("Loading transcript...");
+  const fallbackBaseUrls = Array.isArray(state.context?.captionTracks)
+    ? state.context.captionTracks
+      .map((track) => track?.baseUrl || "")
+      .filter(Boolean)
+    : [];
   const transcriptPayload = await sendMessage("FETCH_TRANSCRIPT", {
-    baseUrl: state.context.captionTrack.baseUrl
+    baseUrl: state.context.captionTrack.baseUrl,
+    fallbackBaseUrls
   });
   state.transcriptSegments = parseTranscriptResponse(transcriptPayload?.text || "", transcriptPayload?.contentType || "");
   state.transcriptText = transcriptSegmentsToText(state.transcriptSegments);
