@@ -19,6 +19,11 @@ function writeText(filePath, contents) {
   fs.writeFileSync(filePath, contents);
 }
 
+function copyFile(sourcePath, destinationPath) {
+  ensureDirectory(path.dirname(destinationPath));
+  fs.copyFileSync(sourcePath, destinationPath);
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -28,11 +33,43 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-function renderInline(text) {
+function getSiteBasePath(siteConfig) {
+  const raw = String(siteConfig?.pagesBaseUrl || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(raw);
+    return parsed.pathname.replace(/\/+$/, "");
+  } catch {
+    return raw.replace(/\/+$/, "");
+  }
+}
+
+function toSiteHref(siteConfig, href) {
+  const value = String(href || "").trim();
+  if (!value || /^https?:\/\//i.test(value) || value.startsWith("#")) {
+    return value;
+  }
+
+  if (!value.startsWith("/")) {
+    return value;
+  }
+
+  const basePath = getSiteBasePath(siteConfig);
+  if (!basePath) {
+    return value;
+  }
+
+  return `${basePath}${value}`;
+}
+
+function renderInline(text, siteConfig) {
   return escapeHtml(text)
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, href) => `<a href="${escapeHtml(toSiteHref(siteConfig, href))}">${label}</a>`);
 }
 
 function expandIncludes(text) {
@@ -45,15 +82,15 @@ function expandIncludes(text) {
   });
 }
 
-function paragraphToHtml(lines) {
-  return `<p>${renderInline(lines.join(" "))}</p>`;
+function paragraphToHtml(lines, siteConfig) {
+  return `<p>${renderInline(lines.join(" "), siteConfig)}</p>`;
 }
 
-function listToHtml(lines, ordered) {
+function listToHtml(lines, ordered, siteConfig) {
   const tag = ordered ? "ol" : "ul";
   const items = lines
     .map((line) => line.replace(ordered ? /^\d+\.\s+/ : /^-\s+/, ""))
-    .map((line) => `<li>${renderInline(line)}</li>`)
+    .map((line) => `<li>${renderInline(line, siteConfig)}</li>`)
     .join("\n");
   return `<${tag}>\n${items}\n</${tag}>`;
 }
@@ -62,7 +99,7 @@ function codeBlockToHtml(lines) {
   return `<pre><code>${escapeHtml(lines.join("\n"))}</code></pre>`;
 }
 
-function markdownToHtml(markdown) {
+function markdownToHtml(markdown, siteConfig) {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   const blocks = [];
   let paragraph = [];
@@ -73,18 +110,18 @@ function markdownToHtml(markdown) {
 
   function flushParagraph() {
     if (paragraph.length) {
-      blocks.push(paragraphToHtml(paragraph));
+      blocks.push(paragraphToHtml(paragraph, siteConfig));
       paragraph = [];
     }
   }
 
   function flushLists() {
     if (list.length) {
-      blocks.push(listToHtml(list, false));
+      blocks.push(listToHtml(list, false, siteConfig));
       list = [];
     }
     if (orderedList.length) {
-      blocks.push(listToHtml(orderedList, true));
+      blocks.push(listToHtml(orderedList, true, siteConfig));
       orderedList = [];
     }
   }
@@ -123,7 +160,7 @@ function markdownToHtml(markdown) {
       flushParagraph();
       flushLists();
       const level = headingMatch[1].length;
-      blocks.push(`<h${level}>${renderInline(headingMatch[2].trim())}</h${level}>`);
+      blocks.push(`<h${level}>${renderInline(headingMatch[2].trim(), siteConfig)}</h${level}>`);
       continue;
     }
 
@@ -164,9 +201,11 @@ function buildPageHtml(siteConfig, title, bodyHtml, currentPath) {
   const navigation = navItems
     .map((item) => {
       const active = item.href === currentPath ? ' aria-current="page"' : "";
-      return `<a href="${item.href}"${active}>${item.label}</a>`;
+      return `<a href="${escapeHtml(toSiteHref(siteConfig, item.href))}"${active}>${item.label}</a>`;
     })
     .join("");
+
+  const faviconHref = toSiteHref(siteConfig, "/favicon.png");
 
   return `<!doctype html>
 <html lang="en">
@@ -174,6 +213,8 @@ function buildPageHtml(siteConfig, title, bodyHtml, currentPath) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${escapeHtml(title)} | ${escapeHtml(siteConfig.productName)}</title>
+    <link rel="icon" type="image/png" href="${escapeHtml(faviconHref)}">
+    <link rel="shortcut icon" href="${escapeHtml(faviconHref)}">
     <style>
       :root {
         color-scheme: light;
@@ -308,6 +349,7 @@ if (!fs.existsSync(siteConfigPath)) {
 const siteConfig = JSON.parse(readText(siteConfigPath));
 ensureDirectory(outputDir);
 writeText(path.join(outputDir, ".nojekyll"), "");
+copyFile(path.join(rootDir, "icons", "icon32.png"), path.join(outputDir, "favicon.png"));
 
 const pageFiles = fs.readdirSync(sourceDir)
   .filter((file) => file.endsWith(".md"));
@@ -315,7 +357,7 @@ const pageFiles = fs.readdirSync(sourceDir)
 for (const file of pageFiles) {
   const filePath = path.join(sourceDir, file);
   const raw = expandIncludes(readText(filePath));
-  const bodyHtml = markdownToHtml(raw);
+  const bodyHtml = markdownToHtml(raw, siteConfig);
   const firstHeading = raw.match(/^#\s+(.+)$/m);
   const title = firstHeading ? firstHeading[1].trim() : siteConfig.productName;
   const pageHtml = buildPageHtml(siteConfig, title, bodyHtml, pagePathFor(file));

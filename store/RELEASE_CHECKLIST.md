@@ -17,9 +17,9 @@
 3. Build a pack with and without Chrome's built-in AI available.
 4. Save more than 5 packs on the free plan and confirm the archive trims correctly.
 5. Confirm Markdown export works on the free plan.
-6. Activate a test Pro license and verify CSV, JSON, and transcript export unlock.
-7. Deactivate the device and confirm the extension returns to the free plan.
-8. Verify PostHog and Sentry receive test events when enabled.
+6. Run `node scripts/billing-smoke.mjs`.
+7. If you have `POLAR_TEST_LICENSE_EMAIL` and `POLAR_TEST_LICENSE_KEY`, rerun `node scripts/billing-smoke.mjs` and verify activate, validate, and deactivate all succeed.
+8. Verify telemetry remains disabled for this release, or if you intentionally enable it, verify PostHog and Sentry receive test events.
 
 ## Store Readiness
 

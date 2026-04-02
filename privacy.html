@@ -29,7 +29,7 @@
           <h2>What The Extension Stores</h2>
           <ul class="list">
             <li>Generated summaries, flashcards, quizzes, and short transcript excerpts in <code>chrome.storage.local</code>.</li>
-            <li>Onboarding state, an anonymous telemetry ID, and local Pro-license state for the current browser profile.</li>
+            <li>Onboarding state and local Pro-license state for the current browser profile.</li>
           </ul>
         </article>
       </section>
@@ -40,7 +40,7 @@
           <ul class="list">
             <li>If Chrome's built-in Prompt API is available, study-pack generation can use that on-device capability.</li>
             <li>If a user activates, refreshes, or deactivates a Pro license, the extension contacts Polar's public license API with the provided email and license key.</li>
-            <li>If analytics or error monitoring are enabled for a release, the extension can send anonymous usage events to PostHog and error details to Sentry.</li>
+            <li>This launch build does not send analytics events or error reports to third-party telemetry services.</li>
           </ul>
         </article>
         <article class="card plain-card">

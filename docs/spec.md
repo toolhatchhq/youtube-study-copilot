@@ -24,9 +24,9 @@ Turn a captioned YouTube watch page into a usable study pack without requiring t
 - opens a welcome page on install and uses it as the options page
 - exposes setup shortcuts from the welcome page for checkout, privacy, support, and repo notes
 - supports Polar license activation, validation, and device deactivation
-- emits product telemetry events to PostHog when enabled in `config.js`
-- sends runtime error reports to Sentry when enabled in `config.js`
+- preserves local Pro access when Polar validation fails for a transient network or provider reason
 - ships public support, privacy, terms, and changelog pages from repo-managed Markdown via GitHub Pages
+- ships with telemetry disabled in the current launch profile
 
 ## Permissions
 
@@ -34,9 +34,8 @@ Turn a captioned YouTube watch page into a usable study pack without requiring t
 - `tabs`
 - `scripting`
 - `sidePanel`
+- host access to `https://youtube.com/*`
 - host access to `https://www.youtube.com/*`
-- host access to `https://*.i.posthog.com/*`
-- host access to `https://*.ingest.sentry.io/*`
 - optional host access to `https://api.polar.sh/*`
 
 ## Out Of Scope For This Release
@@ -45,3 +44,4 @@ Turn a captioned YouTube watch page into a usable study pack without requiring t
 - team collaboration or shared study decks
 - OCR or document parsing beyond YouTube captions
 - subscription billing or seat management
+- live product telemetry and Help Scout inbox integration

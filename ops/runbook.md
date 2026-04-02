@@ -2,8 +2,7 @@
 
 ## Support
 
-- Primary support channel after launch: Help Scout inbox for this product
-- Fastest pre-domain launch path: use the GitHub Pages support URL and route temporary intake through the GitHub issue form linked from that page
+- Current launch support channel: the GitHub Pages support URL plus the GitHub issue form linked from that page
 - Public support URL: publish `site-src/support.md` through GitHub Pages and place the final URL in `APP_CONFIG.supportUrl`
 - Common support topics:
   - no captions available
@@ -11,6 +10,7 @@
   - license activation failed
   - refund or billing confusion
   - exported file expectations
+- Help Scout is optional for a later release, not a launch blocker for this build
 
 ## Billing
 
@@ -22,10 +22,13 @@
   - optional `benefitId`
   - optional `billingPortalUrl`
 - Rule: billing setup steps and refund handling must stay documented here and in `BILLING_SETUP.md`
+- Extension behavior: activation checks validate the expected checkout email and benefit locally after Polar responds, and failed local checks attempt an automatic deactivation rollback.
+- Extension behavior: transient Polar validation or deactivation failures keep the current local Pro state intact and should be retried before support treats them as an entitlement loss.
+- Pre-release gate: run `node scripts/billing-smoke.mjs`; add `POLAR_TEST_LICENSE_EMAIL` and `POLAR_TEST_LICENSE_KEY` when you want the script to exercise live activation, validation, and deactivation.
 
 ## Sentry Setup Standard
 
-- Configure the Sentry DSN in `APP_CONFIG.integrations.sentry`.
+- Status: deferred for this release. Keep Sentry disabled unless the manifest and config are intentionally updated together.
 - Track tags:
   - `product`
   - `version`
@@ -40,7 +43,7 @@
 
 ## PostHog Setup Standard
 
-- Configure the PostHog project key and host in `APP_CONFIG.integrations.posthog`.
+- Status: deferred for this release. Keep PostHog disabled unless the manifest and config are intentionally updated together.
 - Track baseline events from `analytics/events.md`
 - Build dashboards for:
   - activation funnel
@@ -50,7 +53,7 @@
 
 ## Help Scout Standard
 
-- Support inbox is the single customer-facing support channel
+- Status: deferred for this release. The public support page and GitHub issue form are the customer-facing channel for launch.
 - Use product tags or views inside the shared portfolio mailbox
 - Saved replies required for:
   - refund request

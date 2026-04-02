@@ -19,7 +19,7 @@ export const APP_CONFIG = {
     checkoutUrl: "https://buy.polar.sh/polar_cl_y4n1Z3zttgqQB1n1CH1NUES0RDgomh0IgiSrs1ZUdiK",
     billingPortalUrl: "https://polar.sh/toolhatch-hq/portal",
     organizationId: "f39d8a9f-5e9f-47de-836b-2bfa02f8d12d",
-    benefitId: "",
+    benefitId: "8449fac5-1d59-4fe8-9406-aa4aa262f44d",
     productName: "Study Copilot Pro",
     priceLabel: "$19 lifetime",
     requireEmailMatch: true
@@ -137,4 +137,34 @@ export function isPlaceholderContact(value) {
 
 export function getLocalSupportFallback() {
   return "support.html";
+}
+
+export function getSupportContactUrl() {
+  if (!isPlaceholderContact(APP_CONFIG.supportEmail)) {
+    return `mailto:${APP_CONFIG.supportEmail}`;
+  }
+  if (!isPlaceholderContact(APP_CONFIG.supportUrl)) {
+    return APP_CONFIG.supportUrl;
+  }
+  if (!isPlaceholderContact(APP_CONFIG.integrations?.github?.issuesUrl)) {
+    return APP_CONFIG.integrations.github.issuesUrl;
+  }
+  return "";
+}
+
+export function validateConfig() {
+  const warnings = [];
+  if (!getSupportContactUrl() && !getLocalSupportFallback()) {
+    warnings.push("No support route is configured -- users will have no clear path to contact support.");
+  }
+  if (!String(APP_CONFIG.billing.benefitId || "").trim()) {
+    warnings.push("billing.benefitId is empty -- any license key from your Polar org will activate Pro, not just keys for this product.");
+  }
+  if (APP_CONFIG.integrations?.sentry?.enabled && !String(APP_CONFIG.integrations.sentry.dsn || "").trim()) {
+    warnings.push("Sentry is enabled but DSN is empty -- errors will be silently dropped.");
+  }
+  if (APP_CONFIG.integrations?.posthog?.enabled && !String(APP_CONFIG.integrations.posthog.apiKey || "").trim()) {
+    warnings.push("PostHog is enabled but apiKey is empty -- events will be silently dropped.");
+  }
+  return warnings;
 }

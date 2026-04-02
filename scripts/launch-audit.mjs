@@ -22,6 +22,7 @@ const requiredFiles = [
   "site-src/terms.md",
   "site-src/changelog.md",
   "scripts/build-pages.mjs",
+  "scripts/billing-smoke.mjs",
   "store/PRIVACY_POLICY.md",
   "store/RELEASE_CHECKLIST.md",
   "telemetry.js",
@@ -79,6 +80,46 @@ const builtPages = [
 ];
 
 const missingBuiltPages = builtPages.filter((file) => !exists(file));
+const brokenInternalLinks = [];
+
+function getPagesBasePath() {
+  const siteConfigFile = path.join(rootDir, "site-src", "site.json");
+  if (!fs.existsSync(siteConfigFile)) {
+    return "";
+  }
+
+  try {
+    const siteConfig = JSON.parse(fs.readFileSync(siteConfigFile, "utf8"));
+    const pagesBaseUrl = String(siteConfig?.pagesBaseUrl || "").trim();
+    if (!pagesBaseUrl) {
+      return "";
+    }
+
+    return new URL(pagesBaseUrl).pathname.replace(/\/+$/, "");
+  } catch {
+    return "";
+  }
+}
+
+const pagesBasePath = getPagesBasePath();
+
+if (pagesBasePath && !missingBuiltPages.length) {
+  const internalHrefPattern = /\bhref="(\/[^"#?][^"]*)"/g;
+  for (const relativePath of builtPages) {
+    const contents = fs.readFileSync(path.join(rootDir, relativePath), "utf8");
+    for (const match of contents.matchAll(internalHrefPattern)) {
+      const href = match[1];
+      if (href === pagesBasePath || href.startsWith(`${pagesBasePath}/`)) {
+        continue;
+      }
+
+      brokenInternalLinks.push({
+        file: relativePath,
+        href
+      });
+    }
+  }
+}
 
 if (missingFiles.length) {
   console.error("Missing required launch files:");
@@ -101,11 +142,20 @@ if (missingBuiltPages.length) {
   }
 }
 
-if (!missingFiles.length && !placeholders.length && !missingBuiltPages.length) {
+if (brokenInternalLinks.length) {
+  console.error("Built Pages output contains internal links outside the configured Pages base path:");
+  for (const item of brokenInternalLinks) {
+    console.error(`- ${item.file}: ${item.href}`);
+  }
+}
+
+if (!missingFiles.length && !placeholders.length && !missingBuiltPages.length && !brokenInternalLinks.length) {
   console.log("Launch audit passed with no unresolved items.");
 }
 
-const shouldFail = missingFiles.length > 0 || (strictMode && (placeholders.length > 0 || missingBuiltPages.length > 0));
+const shouldFail = missingFiles.length > 0
+  || brokenInternalLinks.length > 0
+  || (strictMode && (placeholders.length > 0 || missingBuiltPages.length > 0));
 
 if (shouldFail) {
   process.exit(1);

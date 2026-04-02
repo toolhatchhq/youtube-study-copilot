@@ -5,7 +5,8 @@ import {
   isBillingConfigured,
   maskLicenseKey,
   normalizeEmail,
-  normalizeLicenseKey
+  normalizeLicenseKey,
+  validateConfig
 } from "./config.js";
 import {
   captureError,
@@ -13,19 +14,50 @@ import {
   trackEvent
 } from "./telemetry.js";
 
+for (const warning of validateConfig()) {
+  console.warn(`[config] ${warning}`);
+}
+
 const STORAGE_KEYS = {
   billing: "billing-state",
   settings: "app-settings",
   studyPacks: "study-packs"
 };
 
-function isSupportedYouTubeWatchUrl(urlString) {
+const SUPPORTED_YOUTUBE_HOSTS = new Set([
+  "youtube.com",
+  "www.youtube.com"
+]);
+
+const TERMINAL_POLAR_LICENSE_ERROR_STATUSES = new Set([400, 404, 410, 422]);
+
+export class PolarApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = "PolarApiError";
+    this.status = status;
+  }
+}
+
+export function isSupportedYouTubeHost(hostname) {
+  return SUPPORTED_YOUTUBE_HOSTS.has(String(hostname || "").trim().toLowerCase());
+}
+
+export function isSupportedYouTubeWatchUrl(urlString) {
   try {
     const url = new URL(urlString);
-    return url.hostname.includes("youtube.com") && url.pathname === "/watch" && url.searchParams.has("v");
+    return isSupportedYouTubeHost(url.hostname) && url.pathname === "/watch" && url.searchParams.has("v");
   } catch {
     return false;
   }
+}
+
+export function shouldResetBillingStateAfterValidateError(error) {
+  return TERMINAL_POLAR_LICENSE_ERROR_STATUSES.has(Number(error?.status));
+}
+
+export function shouldClearLocalBillingStateAfterDeactivateError(error) {
+  return TERMINAL_POLAR_LICENSE_ERROR_STATUSES.has(Number(error?.status));
 }
 
 function pickCaptionTrack(captionTracks) {
@@ -122,28 +154,33 @@ async function getActiveVideoContext() {
     return null;
   }
 
-  const [{ result }] = await chrome.scripting.executeScript({
-    target: { tabId: activeTab.id },
-    world: "MAIN",
-    func: () => {
-      const playerResponse = window.ytInitialPlayerResponse || window.__INITIAL_PLAYER_RESPONSE__ || null;
-      const titleNode = document.querySelector("h1.ytd-watch-metadata yt-formatted-string");
-      const ownerNode = document.querySelector("#owner a");
-      const videoUrl = window.location.href;
-      const url = new URL(videoUrl);
-      const videoId = url.searchParams.get("v");
-      const captionTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
+  let result;
+  try {
+    [{ result }] = await chrome.scripting.executeScript({
+      target: { tabId: activeTab.id },
+      world: "MAIN",
+      func: () => {
+        const playerResponse = window.ytInitialPlayerResponse || window.__INITIAL_PLAYER_RESPONSE__ || null;
+        const titleNode = document.querySelector("h1.ytd-watch-metadata yt-formatted-string");
+        const ownerNode = document.querySelector("#owner a");
+        const videoUrl = window.location.href;
+        const url = new URL(videoUrl);
+        const videoId = url.searchParams.get("v");
+        const captionTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
 
-      return {
-        videoId,
-        url: videoUrl,
-        title: titleNode?.textContent?.trim() || playerResponse?.videoDetails?.title || document.title.replace(/\s*-\s*YouTube$/, ""),
-        author: ownerNode?.textContent?.trim() || playerResponse?.videoDetails?.author || "",
-        shortDescription: playerResponse?.videoDetails?.shortDescription || "",
-        captionTracks
-      };
-    }
-  });
+        return {
+          videoId,
+          url: videoUrl,
+          title: titleNode?.textContent?.trim() || playerResponse?.videoDetails?.title || document.title.replace(/\s*-\s*YouTube$/, ""),
+          author: ownerNode?.textContent?.trim() || playerResponse?.videoDetails?.author || "",
+          shortDescription: playerResponse?.videoDetails?.shortDescription || "",
+          captionTracks
+        };
+      }
+    });
+  } catch {
+    return null;
+  }
 
   if (!result?.videoId) {
     return null;
@@ -341,6 +378,15 @@ function extractPolarError(json, status) {
   return `Polar returned ${status}.`;
 }
 
+function getPolarActivationId(data) {
+  return String(
+    data?.activation?.id
+    || data?.activation_id
+    || data?.id
+    || ""
+  ).trim();
+}
+
 async function callPolarLicenseApi(path, payload) {
   const response = await fetch(`https://api.polar.sh/v1/customer-portal/license-keys/${path}`, {
     method: "POST",
@@ -354,7 +400,7 @@ async function callPolarLicenseApi(path, payload) {
   const json = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(extractPolarError(json, response.status));
+    throw new PolarApiError(extractPolarError(json, response.status), response.status);
   }
 
   return json || {};
@@ -363,6 +409,30 @@ async function callPolarLicenseApi(path, payload) {
 function buildInstanceName() {
   const runtimeId = chrome.runtime.id ? chrome.runtime.id.slice(0, 4) : "ext";
   return `${APP_CONFIG.shortName} ${runtimeId}-${Date.now().toString(36)}`;
+}
+
+function assertCheckoutEmailProvided(email) {
+  if (APP_CONFIG.billing.requireEmailMatch && !normalizeEmail(email)) {
+    throw new Error("Enter the email address used during checkout.");
+  }
+}
+
+async function rollbackFailedActivation(licenseKey, organizationId, activationId) {
+  if (!activationId) {
+    return true;
+  }
+
+  try {
+    await callPolarLicenseApi("deactivate", {
+      key: licenseKey,
+      organization_id: organizationId,
+      activation_id: activationId
+    });
+    return true;
+  } catch (error) {
+    console.warn("Failed to roll back Polar activation after local validation error.", error);
+    return false;
+  }
 }
 
 async function activateProLicense(payload) {
@@ -375,6 +445,7 @@ async function activateProLicense(payload) {
   if (!licenseKey) {
     throw new Error("Enter a license key to activate Pro.");
   }
+  assertCheckoutEmailProvided(email);
 
   const data = await callPolarLicenseApi("activate", {
     key: licenseKey,
@@ -382,9 +453,18 @@ async function activateProLicense(payload) {
     label: buildInstanceName()
   });
 
+  const activationId = getPolarActivationId(data);
   const licenseRecord = getPolarLicenseRecord(data);
-  assertBenefitMatch(licenseRecord);
-  assertCustomerMatch(email, getPolarCustomerEmail(licenseRecord));
+  try {
+    assertBenefitMatch(licenseRecord);
+    assertCustomerMatch(email, getPolarCustomerEmail(licenseRecord));
+  } catch (error) {
+    const rolledBack = await rollbackFailedActivation(licenseKey, organizationId, activationId);
+    if (!rolledBack) {
+      throw new Error(`${error instanceof Error ? error.message : "Activation failed."} The remote activation could not be rolled back automatically, so contact support if this license now appears in use.`);
+    }
+    throw error;
+  }
 
   const nextState = await saveBillingState({
     provider: APP_CONFIG.billing.provider,
@@ -393,7 +473,7 @@ async function activateProLicense(payload) {
     email: email || getPolarCustomerEmail(licenseRecord),
     licenseKey,
     maskedLicenseKey: maskLicenseKey(licenseKey),
-    instanceId: String(data?.id || data?.activation_id || ""),
+    instanceId: activationId,
     customerName: getPolarCustomerName(licenseRecord),
     productName: APP_CONFIG.billing.productName,
     variantName: String(licenseRecord?.benefit_id || "").trim(),
@@ -433,6 +513,10 @@ async function validateProLicense() {
   try {
     data = await callPolarLicenseApi("validate", requestPayload);
   } catch (error) {
+    if (!shouldResetBillingStateAfterValidateError(error)) {
+      throw new Error(`Could not reach Polar to refresh this device right now. Your existing Pro access is unchanged. ${error instanceof Error ? error.message : "Try again shortly."}`);
+    }
+
     return saveBillingState({
       ...createDefaultBillingState(),
       lastError: error instanceof Error ? error.message : "This license is no longer valid."
@@ -452,7 +536,7 @@ async function validateProLicense() {
     customerName: getPolarCustomerName(licenseRecord) || current.customerName,
     productName: APP_CONFIG.billing.productName,
     variantName: String(licenseRecord?.benefit_id || current.variantName || "").trim(),
-    instanceId: String(data?.activation?.id || current.instanceId || ""),
+    instanceId: getPolarActivationId(data) || current.instanceId || "",
     lastValidatedAt: new Date().toISOString(),
     lastError: ""
   });
@@ -462,11 +546,22 @@ async function clearProLicense() {
   const current = await getBillingState();
   if (current.licenseKey && current.instanceId && isBillingConfigured()) {
     const organizationId = getRequiredOrganizationId();
-    await callPolarLicenseApi("deactivate", {
-      key: current.licenseKey,
-      organization_id: organizationId,
-      activation_id: current.instanceId
-    });
+    try {
+      await callPolarLicenseApi("deactivate", {
+        key: current.licenseKey,
+        organization_id: organizationId,
+        activation_id: current.instanceId
+      });
+    } catch (error) {
+      if (!shouldClearLocalBillingStateAfterDeactivateError(error)) {
+        throw new Error(`Could not reach Polar to deactivate this device right now. Local Pro access is unchanged. ${error instanceof Error ? error.message : "Try again shortly."}`);
+      }
+
+      return {
+        billing: await saveBillingState(createDefaultBillingState()),
+        note: "Polar no longer reported an active device for this license, so local Pro access was cleared on this device."
+      };
+    }
 
     return {
       billing: await saveBillingState(createDefaultBillingState()),

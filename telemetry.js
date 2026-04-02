@@ -147,6 +147,13 @@ export function getTelemetryProductName() {
     || APP_CONFIG.appName;
 }
 
+async function ensureHostPermission(origin) {
+  const pattern = `${normalizeOrigin(origin)}/*`;
+  const granted = await chrome.permissions.contains({ origins: [pattern] });
+  if (granted) return true;
+  return chrome.permissions.request({ origins: [pattern] }).catch(() => false);
+}
+
 export async function trackEvent(event, properties = {}) {
   if (!isPostHogConfigured()) {
     return false;
@@ -154,6 +161,7 @@ export async function trackEvent(event, properties = {}) {
 
   try {
     const apiHost = normalizeOrigin(APP_CONFIG.integrations.posthog.apiHost);
+    if (!await ensureHostPermission(apiHost)) return false;
     const distinctId = await getAnonymousId();
 
     await postJson(`${apiHost}/capture/`, {
@@ -181,6 +189,7 @@ export async function captureError(errorInput, context = {}) {
 
   try {
     const parsedDsn = parseSentryDsn(APP_CONFIG.integrations.sentry.dsn);
+    if (!await ensureHostPermission(parsedDsn.origin)) return false;
     const errorPayload = createErrorPayload(errorInput);
     const eventId = crypto.randomUUID().replaceAll("-", "");
     const anonymousId = await getAnonymousId();

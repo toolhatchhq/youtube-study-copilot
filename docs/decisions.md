@@ -47,3 +47,17 @@
 - Decision: Launch on GitHub Pages before buying a custom domain.
 - Why: it removes the domain purchase as a blocker and keeps support, privacy, terms, and changelog pages store-ready with repo-managed source.
 - Tradeoff: the public brand looks more temporary, and customer support should route through the GitHub issue form until Help Scout is live.
+
+## 2026-04-02
+
+- Decision: Restrict supported watch pages to canonical `youtube.com` and `www.youtube.com` hosts, and keep Polar, PostHog, and Sentry origins behind runtime permission requests.
+- Why: tighter host matching avoids false-positive support states and keeps the Chrome Web Store permission story narrower.
+- Tradeoff: non-canonical YouTube subdomains stay out of scope for v1 unless they are explicitly added later.
+
+- Decision: Preserve local Pro access on retryable Polar validation failures and roll back failed activations when local email or benefit checks reject them.
+- Why: transient provider errors should not silently downgrade paying users, and rejected activations should not consume device slots when cleanup succeeds.
+- Tradeoff: some billing failures now surface as retry prompts instead of immediately clearing the local license state.
+
+- Decision: Launch with GitHub Pages plus the GitHub issue form as the support path, and defer live PostHog, Sentry, and Help Scout setup to a later release.
+- Why: it keeps the permission footprint and external-service setup smaller while the product validates its first launch.
+- Tradeoff: launch observability and customer support remain simpler and more manual until a later telemetry-enabled release.

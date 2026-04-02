@@ -29,38 +29,25 @@ Use this sequence to turn the local MVP into a live launch candidate.
 3. If you want stricter entitlement matching, paste the Polar `benefitId` into `config.js`.
 4. Keep the hosted checkout link and billing portal URL current in `config.js`.
 5. Keep `requireEmailMatch: true`.
-6. Run one test purchase, activation, refresh, and device deactivation before release.
+6. Run `node scripts/billing-smoke.mjs`.
+7. Optional: set `POLAR_TEST_LICENSE_EMAIL` and `POLAR_TEST_LICENSE_KEY`, then rerun `node scripts/billing-smoke.mjs` to exercise live activation, validation, and device deactivation.
 
-## 4. PostHog
+## 4. Telemetry
 
-1. Create a PostHog project named `youtube-study-copilot`.
-2. Copy the project API key into `APP_CONFIG.integrations.posthog.apiKey`.
-3. Keep `apiHost` as `https://us.i.posthog.com` unless you are using EU or self-hosted PostHog.
-4. Set `enabled: true`.
-5. Verify these events: `install`, `onboarding_started`, `onboarding_completed`, `paywall_viewed`, `checkout_started`, `license_activated`, `core_action_completed`, `export_used`, `error_shown`.
+1. The current launch profile ships with telemetry disabled.
+2. If you later enable PostHog, add the manifest permissions back, copy the project API key into `APP_CONFIG.integrations.posthog.apiKey`, and verify the baseline events in `analytics/events.md`.
+3. If you later enable Sentry, add the manifest permissions back, copy the browser DSN into `APP_CONFIG.integrations.sentry.dsn`, and verify the required release tags and alerts.
 
-## 5. Sentry
+## 5. Help Scout
 
-1. Create a Sentry project named `youtube-study-copilot`.
-2. Copy the browser DSN into `APP_CONFIG.integrations.sentry.dsn`.
-3. Set `enabled: true`.
-4. Create alerts for:
-   - new error spike
-   - high-frequency error
-   - release regression
-5. Confirm tags include `product`, `version`, `environment`, `release_channel`, and `user_tier`.
+1. Help Scout is optional for a later release.
+2. Until then, keep the GitHub Pages support URL as the public listing link and use the GitHub issue form linked from that page as the intake path.
+3. If you later enable Help Scout, update `APP_CONFIG.integrations.helpScout.supportEmail` and `APP_CONFIG.supportEmail`.
 
-## 6. Help Scout
-
-1. Create one shared mailbox for the portfolio.
-2. Add a `study-copilot` tag or view.
-3. Update `APP_CONFIG.integrations.helpScout.supportEmail` and `APP_CONFIG.supportEmail`.
-4. Create saved replies for refunds, activation issues, missing captions, and billing confusion.
-5. If Help Scout is not live yet, keep the GitHub Pages support URL as the public listing link and use the GitHub issue form linked from that page as the temporary intake path.
-
-## 7. Final Gate
+## 6. Final Gate
 
 1. Run `node scripts/launch-audit.mjs --strict`.
-2. Run the VS Code tasks for repo contract, JS checks, Pages build, and launch audit.
-3. Confirm the Chrome Web Store listing links use the public Pages URLs.
-4. Update `CHANGELOG.md` and `CURRENT_PRIORITIES.md` with the launch state.
+2. Run `node scripts/billing-smoke.mjs`.
+3. Run the VS Code tasks for repo contract, JS checks, Pages build, and launch audit.
+4. Confirm the Chrome Web Store listing links use the public Pages URLs.
+5. Update `CHANGELOG.md` and `CURRENT_PRIORITIES.md` with the launch state.

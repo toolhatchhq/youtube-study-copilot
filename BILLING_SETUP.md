@@ -13,7 +13,7 @@ This extension is already wired for Polar's public customer-license flow:
 - `checkoutUrl` is already set.
 - `billingPortalUrl` is already set.
 - `organizationId` is already set.
-- `benefitId` is still optional and blank by default.
+- `benefitId` is already set.
 
 If you reuse this repo for a different Polar organization, update all four billing fields in `config.js`.
 
@@ -73,13 +73,11 @@ billing: {
 
 ## Test Checklist
 
-1. Open the live Polar checkout link and confirm the product and price are correct.
-2. Complete a test purchase if your Polar setup allows it.
-3. Paste the checkout email and license key into the extension.
-4. Confirm Pro unlocks.
-5. Click `Refresh Access` and confirm validation succeeds.
-6. Click `Deactivate Device` and confirm the activation is released.
-7. If needed, confirm the customer can also remove activations from the Polar customer portal.
+1. Run `node scripts/billing-smoke.mjs`.
+2. Confirm the live Polar checkout link resolves to the correct product and price.
+3. Confirm the billing portal URL resolves to the customer email access screen.
+4. If you have a real test purchase, set `POLAR_TEST_LICENSE_EMAIL` and `POLAR_TEST_LICENSE_KEY`, then rerun `node scripts/billing-smoke.mjs`.
+5. If needed, confirm the customer can also remove activations from the Polar customer portal.
 
 ## Official Docs
 

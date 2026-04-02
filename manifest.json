@@ -2,9 +2,9 @@
   "manifest_version": 3,
   "name": "YouTube Study Copilot",
   "short_name": "Study Copilot",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "description": "Turn YouTube lessons into notes, flashcards, quizzes, and exportable study packs.",
-  "minimum_chrome_version": "114",
+  "minimum_chrome_version": "116",
   "homepage_url": "https://toolhatchhq.github.io/youtube-study-copilot/",
   "permissions": [
     "storage",
@@ -13,10 +13,12 @@
     "sidePanel"
   ],
   "host_permissions": [
-    "https://www.youtube.com/*",
-    "https://*.i.posthog.com/*",
-    "https://*.ingest.sentry.io/*"
+    "https://youtube.com/*",
+    "https://www.youtube.com/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "optional_host_permissions": [
     "https://api.polar.sh/*"
   ],

@@ -16,7 +16,7 @@ This repo now follows the shared Founder OS contract so it is understandable and
 - Polar hosted checkout plus public license activation, refresh, and deactivation flow
 - local privacy and support pages
 - GitHub Pages source files and deployment workflow for public support, privacy, terms, and changelog pages
-- shared telemetry plumbing for PostHog events and Sentry error reporting
+- shared telemetry plumbing for future PostHog events and Sentry error reporting
 - Chrome Web Store listing and release docs in `store/`
 
 ## Billing Setup
@@ -28,7 +28,7 @@ Edit `config.js` before publishing:
 - `APP_CONFIG.billing.benefitId` if you want to lock Pro to a single Polar benefit
 - `APP_CONFIG.billing.billingPortalUrl` if you have a customer portal
 - `APP_CONFIG.supportUrl` if you want a different support destination than the GitHub Pages default
-- `APP_CONFIG.supportEmail` later if you add Help Scout or direct email support
+- `APP_CONFIG.supportEmail` only if you later add Help Scout or direct email support
 - `APP_CONFIG.privacyPolicyUrl` if you are not using the GitHub Pages default
 - `APP_CONFIG.termsUrl` if you are not using the GitHub Pages default
 
@@ -42,15 +42,17 @@ This repo now includes:
 
 - `site-src/` for public Pages content
 - `scripts/build-pages.mjs` to build the public docs site
+- `scripts/billing-smoke.mjs` to verify the live checkout, portal, and organization setup before release
 - `scripts/launch-audit.mjs` to surface missing files and unresolved launch placeholders
 - `.github/workflows/deploy-pages.yml` for GitHub Pages publishing
-- `telemetry.js` as the shared event and error-reporting interface
+- `telemetry.js` as the staged event and error-reporting interface for a later telemetry-enabled release
 
 Fastest launch path:
 
 - keep the GitHub Pages URLs already wired in `config.js`
 - publish the Pages site before buying a custom domain
 - use the GitHub issue form linked from `/support/` as the temporary customer intake path
+- keep telemetry disabled for this release unless you are ready to ship real Sentry and PostHog credentials plus matching manifest permissions
 
 ## Plan Design
 
