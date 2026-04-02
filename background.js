@@ -60,7 +60,83 @@ export function shouldClearLocalBillingStateAfterDeactivateError(error) {
   return TERMINAL_POLAR_LICENSE_ERROR_STATUSES.has(Number(error?.status));
 }
 
-function pickCaptionTrack(captionTracks) {
+export function extractJsonObjectFromAssignment(source, variableName) {
+  if (typeof source !== "string" || !source || !variableName) {
+    return null;
+  }
+
+  const variableIndex = source.indexOf(variableName);
+  if (variableIndex === -1) {
+    return null;
+  }
+
+  const equalsIndex = source.indexOf("=", variableIndex);
+  if (equalsIndex === -1) {
+    return null;
+  }
+
+  const objectStart = source.indexOf("{", equalsIndex);
+  if (objectStart === -1) {
+    return null;
+  }
+
+  let depth = 0;
+  let quote = "";
+  let escaped = false;
+
+  for (let index = objectStart; index < source.length; index += 1) {
+    const char = source[index];
+
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+      if (char === quote) {
+        quote = "";
+      }
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+
+    if (char === "{") {
+      depth += 1;
+      continue;
+    }
+
+    if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return source.slice(objectStart, index + 1);
+      }
+    }
+  }
+
+  return null;
+}
+
+export function parsePlayerResponseFromScriptText(scriptText) {
+  const jsonText = extractJsonObjectFromAssignment(scriptText, "ytInitialPlayerResponse");
+  if (!jsonText) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    return null;
+  }
+}
+
+export function pickCaptionTrack(captionTracks) {
   if (!Array.isArray(captionTracks) || captionTracks.length === 0) {
     return null;
   }
@@ -160,7 +236,113 @@ async function getActiveVideoContext() {
       target: { tabId: activeTab.id },
       world: "MAIN",
       func: () => {
-        const playerResponse = window.ytInitialPlayerResponse || window.__INITIAL_PLAYER_RESPONSE__ || null;
+        function extractJsonObjectFromAssignment(source, variableName) {
+          if (typeof source !== "string" || !source || !variableName) {
+            return null;
+          }
+
+          const variableIndex = source.indexOf(variableName);
+          if (variableIndex === -1) {
+            return null;
+          }
+
+          const equalsIndex = source.indexOf("=", variableIndex);
+          if (equalsIndex === -1) {
+            return null;
+          }
+
+          const objectStart = source.indexOf("{", equalsIndex);
+          if (objectStart === -1) {
+            return null;
+          }
+
+          let depth = 0;
+          let quote = "";
+          let escaped = false;
+
+          for (let index = objectStart; index < source.length; index += 1) {
+            const char = source[index];
+
+            if (quote) {
+              if (escaped) {
+                escaped = false;
+                continue;
+              }
+              if (char === "\\") {
+                escaped = true;
+                continue;
+              }
+              if (char === quote) {
+                quote = "";
+              }
+              continue;
+            }
+
+            if (char === '"' || char === "'") {
+              quote = char;
+              continue;
+            }
+
+            if (char === "{") {
+              depth += 1;
+              continue;
+            }
+
+            if (char === "}") {
+              depth -= 1;
+              if (depth === 0) {
+                return source.slice(objectStart, index + 1);
+              }
+            }
+          }
+
+          return null;
+        }
+
+        function parsePlayerResponse(candidate) {
+          if (candidate && typeof candidate === "object") {
+            return candidate;
+          }
+
+          if (typeof candidate !== "string" || !candidate.trim()) {
+            return null;
+          }
+
+          try {
+            return JSON.parse(candidate);
+          } catch {
+            return null;
+          }
+        }
+
+        function parsePlayerResponseFromInlineScripts() {
+          for (const script of Array.from(document.scripts || [])) {
+            const text = script?.textContent || "";
+            if (!text.includes("ytInitialPlayerResponse")) {
+              continue;
+            }
+
+            const jsonText = extractJsonObjectFromAssignment(text, "ytInitialPlayerResponse");
+            if (!jsonText) {
+              continue;
+            }
+
+            try {
+              return JSON.parse(jsonText);
+            } catch {
+              continue;
+            }
+          }
+
+          return null;
+        }
+
+        const playerResponse = window.ytInitialPlayerResponse
+          || window.__INITIAL_PLAYER_RESPONSE__
+          || parsePlayerResponse(window.ytplayer?.config?.args?.raw_player_response)
+          || parsePlayerResponse(window.ytplayer?.config?.args?.player_response)
+          || parsePlayerResponseFromInlineScripts()
+          || null;
         const titleNode = document.querySelector("h1.ytd-watch-metadata yt-formatted-string");
         const ownerNode = document.querySelector("#owner a");
         const videoUrl = window.location.href;

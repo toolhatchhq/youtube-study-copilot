@@ -5,8 +5,11 @@ import assert from "node:assert/strict";
 await import("./chrome-shim.js");
 const {
   PolarApiError,
+  extractJsonObjectFromAssignment,
   isSupportedYouTubeHost,
   isSupportedYouTubeWatchUrl,
+  parsePlayerResponseFromScriptText,
+  pickCaptionTrack,
   shouldClearLocalBillingStateAfterDeactivateError,
   shouldResetBillingStateAfterValidateError
 } = await import("../background.js");
@@ -82,17 +85,34 @@ describe("Polar API error handling", () => {
   });
 });
 
-describe("pickCaptionTrack", () => {
-  function pickCaptionTrack(captionTracks) {
-    if (!Array.isArray(captionTracks) || captionTracks.length === 0) {
-      return null;
-    }
-    const manualEnglish = captionTracks.find((track) => track.languageCode?.startsWith("en") && !track.kind);
-    const manualAny = captionTracks.find((track) => !track.kind);
-    const autoEnglish = captionTracks.find((track) => track.languageCode?.startsWith("en"));
-    return manualEnglish || manualAny || autoEnglish || captionTracks[0];
-  }
+describe("extractJsonObjectFromAssignment", () => {
+  it("extracts a nested object literal assigned to a variable", () => {
+    const source = 'var ytInitialPlayerResponse = {"captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[{"languageCode":"en","name":{"simpleText":"English"}}]}}}; var meta = {};';
+    const extracted = extractJsonObjectFromAssignment(source, "ytInitialPlayerResponse");
 
+    assert.equal(extracted, '{"captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[{"languageCode":"en","name":{"simpleText":"English"}}]}}}');
+  });
+
+  it("returns null when the assignment is missing", () => {
+    assert.equal(extractJsonObjectFromAssignment("const unrelated = {};", "ytInitialPlayerResponse"), null);
+  });
+});
+
+describe("parsePlayerResponseFromScriptText", () => {
+  it("parses ytInitialPlayerResponse script content into an object", () => {
+    const scriptText = 'ytInitialPlayerResponse = {"captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[{"baseUrl":"https://example.com/timedtext","languageCode":"en"}]}}};var meta = document.createElement("meta");';
+    const playerResponse = parsePlayerResponseFromScriptText(scriptText);
+
+    assert.equal(playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks?.length, 1);
+    assert.equal(playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks?.[0]?.languageCode, "en");
+  });
+
+  it("returns null for malformed script content", () => {
+    assert.equal(parsePlayerResponseFromScriptText("ytInitialPlayerResponse = {oops"), null);
+  });
+});
+
+describe("pickCaptionTrack", () => {
   it("returns null for empty array", () => {
     assert.equal(pickCaptionTrack([]), null);
   });
