@@ -18,6 +18,7 @@
 - Added `scripts/billing-smoke.mjs` as a repeatable pre-release gate for the live Polar checkout, portal, organization, and optional env-backed license lifecycle flow.
 - Narrowed the launch profile to GitHub Pages plus issue-form support and removed unused telemetry permissions from the manifest for this release.
 - Added YouTube caption-detection fallbacks so videos with valid caption tracks are less likely to be misreported as captionless.
+- Moved transcript fetching onto the active YouTube page context and added JSON3/WebVTT transcript parsing for caption responses that are not plain XML.
 
 ## 0.4.0 - 2026-03-26
 

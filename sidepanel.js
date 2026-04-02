@@ -11,6 +11,9 @@ import {
   captureUiError,
   trackUiEvent
 } from "./telemetry.js";
+import {
+  parseTranscriptResponse
+} from "./transcript.js";
 
 const state = {
   billing: null,
@@ -157,12 +160,6 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-}
-
-function decodeHtmlEntities(text) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(`<body>${text}</body>`, "text/html");
-  return doc.body.textContent || "";
 }
 
 function transcriptSegmentsToText(segments) {
@@ -426,32 +423,6 @@ function renderAll() {
   renderBilling();
   renderExports();
   renderSavedPacks();
-}
-
-async function fetchTranscript(baseUrl) {
-  const response = await fetch(baseUrl);
-  if (!response.ok) {
-    throw new Error(`Transcript fetch failed with status ${response.status}.`);
-  }
-  const xmlText = await response.text();
-  const xml = new DOMParser().parseFromString(xmlText, "text/xml");
-  if (xml.querySelector("parsererror")) {
-    throw new Error("YouTube returned captions in an unreadable format.");
-  }
-
-  const segments = Array.from(xml.querySelectorAll("text"))
-    .map((node) => ({
-      start: Number(node.getAttribute("start") || 0),
-      duration: Number(node.getAttribute("dur") || 0),
-      text: decodeHtmlEntities(node.textContent || "").replace(/\s+/g, " ").trim()
-    }))
-    .filter((segment) => segment.text);
-
-  if (!segments.length) {
-    throw new Error("YouTube did not return readable caption lines for this video.");
-  }
-
-  return segments;
 }
 
 function isContentWord(word) {
@@ -875,7 +846,10 @@ async function loadTranscript() {
     return;
   }
   setStatus("Loading transcript...");
-  state.transcriptSegments = await fetchTranscript(state.context.captionTrack.baseUrl);
+  const transcriptPayload = await sendMessage("FETCH_TRANSCRIPT", {
+    baseUrl: state.context.captionTrack.baseUrl
+  });
+  state.transcriptSegments = parseTranscriptResponse(transcriptPayload?.text || "", transcriptPayload?.contentType || "");
   state.transcriptText = transcriptSegmentsToText(state.transcriptSegments);
   state.livePack = null;
   if (state.displayedPackSource === "live") {

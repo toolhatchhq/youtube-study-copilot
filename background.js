@@ -13,6 +13,9 @@ import {
   createErrorPayload,
   trackEvent
 } from "./telemetry.js";
+import {
+  buildTranscriptFetchCandidates
+} from "./transcript.js";
 
 for (const warning of validateConfig()) {
   console.warn(`[config] ${warning}`);
@@ -399,6 +402,99 @@ async function trimStoredStudyPacks(limit) {
     await chrome.storage.local.set({ [STORAGE_KEYS.studyPacks]: next });
   }
   return next;
+}
+
+async function fetchTranscriptFromActiveTab(baseUrl) {
+  const activeTab = await getActiveTab();
+
+  if (!activeTab?.id || !activeTab.url || !isSupportedYouTubeWatchUrl(activeTab.url)) {
+    throw new Error("Open a supported YouTube watch page before loading captions.");
+  }
+
+  const candidateUrls = buildTranscriptFetchCandidates(baseUrl);
+  if (!candidateUrls.length) {
+    throw new Error("No caption track URL is available for this video.");
+  }
+
+  let result;
+  try {
+    [{ result }] = await chrome.scripting.executeScript({
+      target: { tabId: activeTab.id },
+      world: "MAIN",
+      func: async (urls) => {
+        function looksLikeHtmlResponse(text, contentType = "") {
+          const normalizedText = String(text || "").trimStart();
+          const normalizedType = String(contentType || "").toLowerCase();
+
+          return normalizedType.includes("text/html")
+            || normalizedText.startsWith("<!DOCTYPE html")
+            || normalizedText.startsWith("<html")
+            || normalizedText.startsWith("<HTML");
+        }
+
+        let lastPayload = null;
+
+        for (const url of urls) {
+          try {
+            const response = await fetch(url, { credentials: "include" });
+            const text = await response.text();
+            const payload = {
+              url,
+              status: response.status,
+              contentType: response.headers.get("content-type") || "",
+              text
+            };
+
+            lastPayload = payload;
+
+            if (!response.ok) {
+              continue;
+            }
+
+            if (!text.trim()) {
+              continue;
+            }
+
+            if (looksLikeHtmlResponse(text, payload.contentType)) {
+              continue;
+            }
+
+            return payload;
+          } catch (error) {
+            lastPayload = {
+              url,
+              status: 0,
+              contentType: "",
+              text: "",
+              error: error instanceof Error ? error.message : String(error || "Unknown fetch failure.")
+            };
+          }
+        }
+
+        return lastPayload;
+      },
+      args: [candidateUrls]
+    });
+  } catch {
+    throw new Error("Could not fetch captions from the current YouTube page.");
+  }
+
+  if (!result) {
+    throw new Error("Could not fetch captions from the current YouTube page.");
+  }
+
+  if (result.error) {
+    throw new Error(result.error);
+  }
+
+  if (!result.text?.trim()) {
+    throw new Error("YouTube returned an empty caption response.");
+  }
+
+  return {
+    text: result.text,
+    contentType: result.contentType || ""
+  };
 }
 
 async function getSettings() {
@@ -824,6 +920,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         return;
       case "GET_ACTIVE_VIDEO_CONTEXT":
         sendResponse({ ok: true, data: await getActiveVideoContext() });
+        return;
+      case "FETCH_TRANSCRIPT":
+        sendResponse({ ok: true, data: await fetchTranscriptFromActiveTab(message.payload?.baseUrl) });
         return;
       case "GET_SAVED_STUDY_PACKS":
         sendResponse({ ok: true, data: await getStoredStudyPacks() });
