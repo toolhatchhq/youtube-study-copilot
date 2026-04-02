@@ -163,7 +163,7 @@ export function pickCaptionTrack(captionTracks, defaultCaptionTrackIndex = -1) {
   const manualAny = captionTracks.find((track) => !track.kind);
   const autoEnglish = captionTracks.find((track) => track.languageCode?.startsWith("en"));
 
-  return defaultTrack || manualEnglish || manualAny || autoEnglish || captionTracks[0];
+  return manualEnglish || defaultTrack || manualAny || autoEnglish || captionTracks[0];
 }
 
 function createDefaultSettings() {
