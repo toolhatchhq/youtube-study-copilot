@@ -16,6 +16,7 @@ Turn a captioned YouTube watch page into a usable study pack without requiring t
 - reads the current video metadata and available caption track
 - falls back across multiple YouTube player-response sources before declaring a watch page captionless
 - fetches transcript data from the active YouTube page context and supports XML, JSON3, and WebVTT caption payloads
+- surfaces YouTube consent/auth transcript blocks with a direct explanation when the watch page itself is restricted
 - generates summary bullets, flashcards, and quiz prompts
 - prefers Chrome's built-in Prompt API when available
 - falls back to heuristic generation when built-in AI is unavailable

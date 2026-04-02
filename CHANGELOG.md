@@ -20,6 +20,7 @@
 - Added YouTube caption-detection fallbacks so videos with valid caption tracks are less likely to be misreported as captionless.
 - Moved transcript fetching onto the active YouTube page context and added JSON3/WebVTT transcript parsing for caption responses that are not plain XML.
 - Updated transcript loading to prefer YouTube's default caption track and retry other available tracks before giving up on videos with empty caption payloads.
+- Added explicit detection for YouTube consent/auth transcript blocks so restricted pages report the real blocker instead of a generic empty-caption error.
 
 ## 0.4.0 - 2026-03-26
 

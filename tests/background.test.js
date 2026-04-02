@@ -6,6 +6,7 @@ await import("./chrome-shim.js");
 const {
   PolarApiError,
   extractJsonObjectFromAssignment,
+  getTranscriptAccessBlockReason,
   isSupportedYouTubeHost,
   isSupportedYouTubeWatchUrl,
   parsePlayerResponseFromScriptText,
@@ -82,6 +83,26 @@ describe("Polar API error handling", () => {
   it("allows local deactivation cleanup only for terminal license states", () => {
     assert.equal(shouldClearLocalBillingStateAfterDeactivateError(new PolarApiError("Activation missing", 410)), true);
     assert.equal(shouldClearLocalBillingStateAfterDeactivateError(new PolarApiError("Provider unavailable", 503)), false);
+  });
+});
+
+describe("getTranscriptAccessBlockReason", () => {
+  it("explains cookie/consent prompts clearly", () => {
+    assert.match(
+      getTranscriptAccessBlockReason({ hasConsentPrompt: true }),
+      /cookie\/privacy confirmation/i
+    );
+  });
+
+  it("explains YouTube auth gates clearly", () => {
+    assert.match(
+      getTranscriptAccessBlockReason({ playerErrorCode: "auth" }),
+      /sign in or confirm you're not a bot/i
+    );
+  });
+
+  it("returns empty string when no block is detected", () => {
+    assert.equal(getTranscriptAccessBlockReason({}), "");
   });
 });
 

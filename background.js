@@ -63,6 +63,18 @@ export function shouldClearLocalBillingStateAfterDeactivateError(error) {
   return TERMINAL_POLAR_LICENSE_ERROR_STATUSES.has(Number(error?.status));
 }
 
+export function getTranscriptAccessBlockReason(issue = {}) {
+  if (issue.hasConsentPrompt) {
+    return "YouTube needs your cookie/privacy confirmation before captions can load. Complete the YouTube prompt on the page, then reload the tab.";
+  }
+
+  if (String(issue.playerErrorCode || "").toLowerCase() === "auth") {
+    return "YouTube is blocking transcript access on this page. If YouTube asks you to sign in or confirm you're not a bot, complete that step, then reload the tab.";
+  }
+
+  return "";
+}
+
 export function extractJsonObjectFromAssignment(source, variableName) {
   if (typeof source !== "string" || !source || !variableName) {
     return null;
@@ -448,6 +460,21 @@ async function fetchTranscriptFromActiveTab(baseUrl, fallbackBaseUrls = []) {
       target: { tabId: activeTab.id },
       world: "MAIN",
       func: async (urls) => {
+        function detectTranscriptAccessIssue() {
+          const player = document.getElementById("movie_player");
+          const playerErrorCode = player?.getVideoData?.()?.errorCode || "";
+          const hasConsentPrompt = Boolean(
+            document.querySelector('a[href*="consent.youtube.com"], a[href*="consent.google.com"], iframe[src*="consent.youtube.com"], iframe[src*="consent.google.com"]')
+            || Array.from(document.querySelectorAll("dialog, tp-yt-paper-dialog, ytd-consent-bump-v2-lightbox"))
+              .some((element) => /consent|cookie|before you continue/i.test(element?.textContent || ""))
+          );
+
+          return {
+            playerErrorCode,
+            hasConsentPrompt
+          };
+        }
+
         function looksLikeHtmlResponse(text, contentType = "") {
           const normalizedText = String(text || "").trimStart();
           const normalizedType = String(contentType || "").toLowerCase();
@@ -497,7 +524,10 @@ async function fetchTranscriptFromActiveTab(baseUrl, fallbackBaseUrls = []) {
           }
         }
 
-        return lastPayload;
+        return {
+          ...(lastPayload || {}),
+          accessIssue: detectTranscriptAccessIssue()
+        };
       },
       args: [candidateUrls]
     });
@@ -511,6 +541,11 @@ async function fetchTranscriptFromActiveTab(baseUrl, fallbackBaseUrls = []) {
 
   if (result.error) {
     throw new Error(result.error);
+  }
+
+  const blockReason = getTranscriptAccessBlockReason(result.accessIssue || {});
+  if (blockReason && !result.text?.trim()) {
+    throw new Error(blockReason);
   }
 
   if (!result.text?.trim()) {
